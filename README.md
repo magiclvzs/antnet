@@ -137,6 +137,8 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 16. SetTomeout 设置一个定时器
 
 ##日志
+antnet会默认会产生一个日志系统，通过antnet.Logxxx即可输出不同等级的日志。
 ##redis封装
+
 ##定时器
 antnet会默认运行一个基于时间轮的计时器，精度是毫秒，用于定时器使用。
