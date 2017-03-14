@@ -136,9 +136,22 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 14. ParseBaseKind 字符串到特定类型的转化  
 15. CmdAct 将cmd和act转为一个int   
 16. SetTomeout 设置一个定时器
+17. LogXXX 日志系列函数
 
 ##日志
-antnet会默认会产生一个日志系统，通过antnet.Logxxx即可输出不同等级的日志。
+antnet会默认会产生一个日志系统，通过antnet.Logxxx即可输出不同等级的日志。    
+日志等级分类如下：
+```
+const (
+	LogLevelAllOn  LogLevel = iota //开放说有日志
+	LogLevelDebug                  //调试信息
+	LogLevelInfo                   //资讯讯息
+	LogLevelWarn                   //警告状况发生
+	LogLevelError                  //一般错误，可能导致功能不正常
+	LogLevelFatal                  //严重错误，会导致进程退出
+	LogLevelAllOff                 //关闭所有日志
+)
+```
 ##redis封装
 antnet对redis进行了一下封装。   
 antnet.Redis代表了对redis的一个封装，主要记录了对eval指令的处理，能购把预先生成的lua脚本上传到redis得到hash，以后使用evalsha命令进行调用。
