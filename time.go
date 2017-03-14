@@ -93,7 +93,7 @@ func setTomeout(name string, inteval uint32, handler func(interface{}) uint32, a
 	timewheelsLock.Unlock()
 }
 
-func DeleteTimer(name string) {
+func DelTimeout(name string) {
 	timerMapLock.Lock()
 	if v, ok := timerMap[name]; ok {
 		v.Callback = nil
