@@ -86,19 +86,19 @@ type IMsgHandler interface {
 启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
 ##全局函数
 为了方便使用antnet封装了一些全局函数以供调用：
-1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。
-2. Go 用于创建可被antnet管理的goroutine
-2. Go2 通Go，不同的是会有个默认的channel，以通知antnet的结束
-3. Stop 结束antnet
-4. Println 再也不想需要打印某些调试信息的时候导入fmt，而打印完成又去删除fmt引用了
-5. Printf 同上
-6. Sprintf 同上
-7. IsStop antnet是否停止
-8. IsRuning antnet是否运行中
-9. PathExists 判断路径是否存在
-10. Daemon 进入精灵进程
-11. GetStatis 获得antnet的统计信息
-12. Atoi 简化字符串到数值
-13. Itoa 简化数值到字符串
-14. ParseBaseKind 字符串到特定类型的转化
-15. CmdAct 将cmd和act转为一个int
+1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。  
+2. Go 用于创建可被antnet管理的goroutine  
+2. Go2 通Go，不同的是会有个默认的channel，以通知antnet的结束  
+3. Stop 结束antnet  
+4. Println 再也不想需要打印某些调试信息的时候导入fmt，而打印完成又去删除fmt引用了  
+5. Printf 同上  
+6. Sprintf 同上  
+7. IsStop antnet是否停止  
+8. IsRuning antnet是否运行中  
+9. PathExists 判断路径是否存在  
+10. Daemon 进入精灵进程  
+11. GetStatis 获得antnet的统计信息  
+12. Atoi 简化字符串到数值  
+13. Itoa 简化数值到字符串  
+14. ParseBaseKind 字符串到特定类型的转化  
+15. CmdAct 将cmd和act转为一个int  
