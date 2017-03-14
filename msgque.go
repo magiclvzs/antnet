@@ -10,8 +10,8 @@ import (
 type MsgType int
 
 const (
-	MsgTypeMsg MsgType = iota
-	MsgTypeCmd
+	MsgTypeMsg MsgType = iota //消息基于确定的消息头
+	MsgTypeCmd                //消息没有消息头，以\n分割
 )
 
 type ConnType int
@@ -59,9 +59,9 @@ type HandlerFunc func(msgque IMsgQue, msg *Message) bool
 type IMsgHandler interface {
 	OnNewMsgQue(msgque IMsgQue) bool                //新的消息队列
 	OnDelMsgQueue(msgque IMsgQue)                   //消息队列关闭
-	OnProcessMsg(msgque IMsgQue, msg *Message) bool //处理消息
+	OnProcessMsg(msgque IMsgQue, msg *Message) bool //默认的消息处理函数
 	OnConnectComplete(msgque IMsgQue, ok bool) bool //连接成功
-	GetHandlerFunc(msg *Message) HandlerFunc
+	GetHandlerFunc(msg *Message) HandlerFunc        //根据消息获得处理函数
 }
 
 type DefMsgHandler struct {

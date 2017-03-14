@@ -127,20 +127,6 @@ func (r *tcpMsgQue) readMsg() {
 
 			if head.Len == 0 {
 				msg := &Message{Head: head}
-				if r.parser != nil {
-					mp, err := r.parser.ParseC2S(msg)
-					if err == nil {
-						msg.IMsgParser = mp
-					} else {
-						if r.parser.GetErrType() == ParseErrTypeSendRemind {
-							r.Send(r.parser.GetRemindMsg(err, r.msgTyp).CopyTag(msg))
-							continue
-						} else if r.parser.GetErrType() == ParseErrTypeClose {
-							break
-						}
-					}
-				}
-
 				f := r.handler.GetHandlerFunc(msg)
 				if f == nil {
 					f = r.handler.OnProcessMsg
@@ -173,6 +159,8 @@ func (r *tcpMsgQue) readMsg() {
 						continue
 					} else if r.parser.GetErrType() == ParseErrTypeClose {
 						break
+					} else if r.parser.GetErrType() == ParseErrTypeContinue {
+						continue
 					}
 				}
 			}
@@ -296,6 +284,8 @@ func (r *tcpMsgQue) readCmd() {
 					continue
 				} else if r.parser.GetErrType() == ParseErrTypeClose {
 					break
+				} else if r.parser.GetErrType() == ParseErrTypeContinue {
+					continue
 				}
 			}
 		}

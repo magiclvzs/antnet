@@ -54,17 +54,18 @@ func (r *MsgParser) S2CString() string {
 type ParserType int
 
 const (
-	ParserTypePB ParserType = iota
-	ParserTypeJson
-	ParserTypeCmd
+	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
+	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
+	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
 )
 
 type ParseErrType int
 
 const (
-	ParseErrTypeSendRemind ParseErrType = iota
-	ParseErrTypeContinue
-	ParseErrTypeClose
+	ParseErrTypeSendRemind ParseErrType = iota //消息解析失败发送提醒消息
+	ParseErrTypeContinue                       //消息解析失败则跳过本条消息
+	ParseErrTypeAlways                         //消息解析失败依然处理
+	ParseErrTypeClose                          //消息解析失败则关闭连接
 )
 
 type ParseFunc func() interface{}

@@ -77,10 +77,10 @@ func NewMessageHead(data []byte) *MessageHead {
 }
 
 type Message struct {
-	Head *MessageHead
-	Data []byte
-	IMsgParser
-	User interface{}
+	Head       *MessageHead //消息头，可能为nil
+	Data       []byte       //消息数据
+	IMsgParser              //解析器
+	User       interface{}  //用户自定义数据
 }
 
 func (r *Message) CmdAct() int {
