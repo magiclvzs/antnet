@@ -41,6 +41,10 @@ func main() {
 上面的例子模拟了一个游戏服务器常见的需求，即命令行式的交互，这对于游戏后台的调试以及某些gm指令的执行非常有效。  
 ##代码组织
 antnet尽可能把功能相关的代码组织到一块，让你能快速找到代码，比如parser打头的文件表示解析器相关，msgque打头的文件表示消息队列相关。
+##依赖项
+github.com/golang/protobuf   
+github.com/vmihailenco/msgpack   
+github.com/go-redis/redis   
 ##消息头
 对于一个网络服务器，我们首先需要定义的是消息头，antnet的消息头长度为12个字节，定义如下
 ```
