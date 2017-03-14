@@ -84,6 +84,10 @@ type IMsgHandler interface {
 如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。    
 ##启动服务
 启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
+##全局变量
+为了方便使用antnet封装了一些全局变量：
+1. StartTick 用于标识antnet启动的时刻，是一个毫秒级的时间戳
+2. NowTick 用于标识antnet现在的时刻，是一个自动变化的毫秒级时间戳
 ##全局函数
 为了方便使用antnet封装了一些全局函数以供调用：
 1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。  
@@ -101,4 +105,4 @@ type IMsgHandler interface {
 12. Atoi 简化字符串到数值  
 13. Itoa 简化数值到字符串  
 14. ParseBaseKind 字符串到特定类型的转化  
-15. CmdAct 将cmd和act转为一个int  
+15. CmdAct 将cmd和act转为一个int   
