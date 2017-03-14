@@ -6,9 +6,7 @@ A game server framework in Golang    一个Golang游戏服务器框架  
 ```
 package main
 
-import (
-	"antnet"
-)
+import "antnet"
 
 type GetGamerLevel struct {
 	Get   string `match:"k"`
