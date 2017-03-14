@@ -67,3 +67,17 @@ antnet目前有三种解析器类型：
 定义好解析之后，就需要注册解析器需要解析的消息，解析器支持两种模式：  
 1. 基于cmd和act的解析，支持上面三种类型，配合消息头使用，使用Register进行注册。  
 2. 基于输入的解析，可以支持json和cmd类型，这种消息往往没有消息头，使用RegisterMsg进行注册。  
+##处理器
+处理器用于处理消息，一个处理器应该实现IMsgHandler消息接口：
+```
+type IMsgHandler interface {
+	OnNewMsgQue(msgque IMsgQue) bool                //新的消息队列
+	OnDelMsgQueue(msgque IMsgQue)                   //消息队列关闭
+	OnProcessMsg(msgque IMsgQue, msg *Message) bool //处理消息
+	OnConnectComplete(msgque IMsgQue, ok bool) bool //连接成功
+	GetHandlerFunc(msg *Message) HandlerFunc
+}
+```
+当然，一般情况，你只需在你的处理器里面添加antnet.DefMsgHandler定义即可。  
+在antnet.DefMsgHandler里面，同样定义了Register和RegisterMsg函数，原理和解析器一样，也是为了区分不同的输入。  
+如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。   
