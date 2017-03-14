@@ -78,6 +78,7 @@ type IMsgHandler interface {
 	GetHandlerFunc(msg *Message) HandlerFunc
 }
 ```
-当然，一般情况，你只需在你的处理器里面添加antnet.DefMsgHandler定义即可。   
-在antnet.DefMsgHandler里面，同样定义了Register和RegisterMsg函数，原理和解析器一样，也是为了区分不同的输入。   
+
+当然，一般情况，你只需在你的处理器里面添加antnet.DefMsgHandler定义即可。  
+在antnet.DefMsgHandler里面，同样定义了Register和RegisterMsg函数，原理和解析器一样，也是为了区分不同的输入。   
 如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。    
