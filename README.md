@@ -140,7 +140,10 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 ##日志
 antnet会默认会产生一个日志系统，通过antnet.Logxxx即可输出不同等级的日志。
 ##redis封装
-antnet对redis进行了一下封装。
+antnet对redis进行了一下封装。   
+antnet.Redis代表了对redis的一个封装，主要记录了对eval指令的处理，能购把预先生成的lua脚本上传到redis得到hash，以后使用evalsha命令进行调用。
+RedisManager用于管理一组redis数据库。   
+
 ##定时器
 antnet会默认运行一个基于时间轮的计时器，精度是毫秒，用于定时器使用。
 ##数据模型
