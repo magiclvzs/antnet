@@ -82,7 +82,7 @@ type IMsgHandler interface {
 当然，一般情况，你只需在你的处理器里面添加antnet.DefMsgHandler定义即可。  
 在antnet.DefMsgHandler里面，同样定义了Register和RegisterMsg函数，原理和解析器一样，也是为了区分不同的输入。   
 如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。    
-###处理器的调用时机
+####处理器的调用时机
 antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，一个用于写，处理的回调发生在每个链接的读的goroutine之上，为什么要这么设计，是考虑当客户端的一个消息没有处理完成的时候真的有必要立即处理下一个消息吗？  
 ##启动服务
 启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
