@@ -117,6 +117,8 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 为了方便使用antnet封装了一些全局变量：  
 1. StartTick 用于标识antnet启动的时刻，是一个毫秒级的时间戳    
 2. NowTick 用于标识antnet现在的时刻，是一个自动变化的毫秒级时间戳  
+3. DefMsgQueTimeout 默认的网络超时，当超过这个时间和客户端没有交互，antnet将断开连接，默认是30s    
+4. MaxMsgDataSize 默认的最大数据长度，超过这个长度的消息将会被拒绝并关闭连接，默认为1MB    
 ##全局函数
 为了方便使用antnet封装了一些全局函数以供调用：  
 1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。  
