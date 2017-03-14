@@ -1,7 +1,7 @@
 # antnet
 A game server framework in Golang
 ## 第一次使用
-   在介绍antnet之前，我们想使用一次，看看antnet如何构建一个网络程序
+   在介绍antnet之前，我们先使用一次，看看antnet如何构建一个网络程序
 ```
 package main
 
@@ -35,5 +35,7 @@ func main() {
 	antnet.WaitForSystemExit()
 }
 ```
-在这个示例中，我们建立了一个基于命令的网络应用。现在打开命令行，执行telent 127.0.0.1 6666，
+在这个示例中，我们建立了一个基于命令的网络应用。
+现在打开命令行，执行telent 127.0.0.1 6666，
 输入字符串 get gamer 1 level，你将收到回复{"Get":"get","Gamer":1,"Level":8}
+上面的例子模拟了一个游戏服务器常见的需求，即命令行式的交互，这对于游戏后台的调试以及某些gm指令的执行非常有效。
