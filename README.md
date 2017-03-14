@@ -134,5 +134,9 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 13. Itoa 简化数值到字符串  
 14. ParseBaseKind 字符串到特定类型的转化  
 15. CmdAct 将cmd和act转为一个int   
+16. SetTomeout 设置一个定时器
+
 ##日志
 ##redis封装
+##定时器
+antnet会默认运行一个基于时间轮的计时器，精度是毫秒，用于定时器使用。
