@@ -106,3 +106,5 @@ type IMsgHandler interface {
 13. Itoa 简化数值到字符串  
 14. ParseBaseKind 字符串到特定类型的转化  
 15. CmdAct 将cmd和act转为一个int   
+##日志
+##redis封装
