@@ -102,7 +102,11 @@ pf := &antnet.Parser{Type: antnet.ParserTypeCmd}
 定义好解析之后，就需要注册解析器需要解析的消息，解析器支持两种模式：  
 1. 基于MsgTypeMsg的，根据cmd和act进行解析，支持上面三种类型，使用Register进行注册。
 2. 基于MsgTypeCmd的，可以支持ParserTypeCmd和ParserTypeCmd类型，这种消息往往没有消息头，使用RegisterMsg进行注册。  
-
+两种类型的注册函数定义如下：    
+```
+Register(cmd uint8, act uint8, c2s interface{}, s2c interface{})
+RegisterMsg(c2s interface{}, s2c interface{})
+```
 #### 命令行解析器
 命令行解析器用于解析命令行输入，类似telnet，我希望但服务器运行起来之后有一个非常简单的交流接口，直接基于telnet是最好了，而这个解析器就是为此准备，他可以接收不完整的输入，只要你最终输入完整即可，也可以接收你错误的输入，直到你输入正确为止。    
 命令行解析器目前支持两种tag：   
@@ -172,7 +176,7 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 ```
 antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, h, pf)
 ```
-在服务启动后我们需要等待ctrl+C消息以结束服务，使用WaitForSystemExit()函数即可。    
+在服务启动后我们需要等待ctrl+C消息以结束服务，使用WaitForSystemExit()函数即可。      
 完整示例： 
 ```
 package main
