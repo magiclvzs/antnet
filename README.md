@@ -123,7 +123,7 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 为了方便使用antnet封装了一些全局函数以供调用：  
 1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。  
 2. Go 用于创建可被antnet管理的goroutine  
-2. Go2 通Go，不同的是会有个默认的channel，以通知antnet的结束  
+2. Go2 同Go，不同的是会有个默认的channel，以通知antnet的结束  
 3. Stop 结束antnet  
 4. Println 再也不想需要打印某些调试信息的时候导入fmt，而打印完成又去删除fmt引用了  
 5. Printf 同上  
