@@ -192,18 +192,18 @@ type GetGamerLevel struct {
 type Handler struct {
 	antnet.DefMsgHandler
 }
-
+func test(msgque antnet.IMsgQue, msg *antnet.Message) bool {
+	c2s := msg.C2S().(*GetGamerLevel)
+	c2s.Level = 8
+	msgque.SendStringLn(msg.C2SString())
+	return true
+}
 func main() {
 	pf := &antnet.Parser{Type: antnet.ParserTypeCmd}
 	pf.RegisterMsg(&GetGamerLevel{}, nil)
 
 	h := &Handler{}
-	h.RegisterMsg(&GetGamerLevel{}, func(msgque antnet.IMsgQue, msg *antnet.Message) bool {
-		c2s := msg.C2S().(*GetGamerLevel)
-		c2s.Level = 8
-		msgque.SendStringLn(msg.C2SString())
-		return true
-	})
+	h.RegisterMsg(&GetGamerLevel{}, test)
 
 	antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, h, pf)
 	antnet.WaitForSystemExit()
