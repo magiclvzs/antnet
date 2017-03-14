@@ -1,5 +1,6 @@
 # antnet
-A game server framework in Golang
+A game server framework in Golang    
+一个Golang游戏服务器框架   
 ## 第一次使用
    在介绍antnet之前，我们先使用一次，看看antnet如何构建一个网络程序
 ```
