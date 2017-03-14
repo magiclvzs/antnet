@@ -1,5 +1,5 @@
 # antnet
-A game server framework in Golang    一个Golang游戏服务器框架   
+A game server framework in Golang    一个Golang游戏服务器框架     
 有疑问可联系qq：441707528   
 ## 第一次使用
    在介绍antnet之前，我们先使用一次，看看antnet如何构建一个网络程序
@@ -147,3 +147,5 @@ RedisManager用于管理一组redis数据库。  
 ##定时器
 antnet会默认运行一个基于时间轮的计时器，精度是毫秒，用于定时器使用。
 ##数据模型
+antnet自带了一个基于redis的数据模型处理，使用protobuf作为数据库定义语言，默认情况下，redis内部存储的数据是msgpack格式的，处理的时候你可以非常方便的将他转换为protobuf数据流发给你的客户端。     
+你可以使用protobuf产生的go结构体作为数据模型，当存入redis时，存入msgpack字节流，之所以这么做，是为了方便redis里面能直接用lua脚本操作单个字段。    当从数据库读出后，你可能方便的将他转换为pb字节流，填充到你定义好的pb结构体中，发送给客户端。
