@@ -91,7 +91,7 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 1. StartTick 用于标识antnet启动的时刻，是一个毫秒级的时间戳    
 2. NowTick 用于标识antnet现在的时刻，是一个自动变化的毫秒级时间戳  
 ##全局函数
-为了方便使用antnet封装了一些全局函数以供调用：
+为了方便使用antnet封装了一些全局函数以供调用：  
 1. WaitForSystemExit 用于等待用户输入ctrl+C以结束进程。  
 2. Go 用于创建可被antnet管理的goroutine  
 2. Go2 通Go，不同的是会有个默认的channel，以通知antnet的结束  
