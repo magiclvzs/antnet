@@ -85,4 +85,4 @@ type IMsgHandler interface {
 ##启动服务
 启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
 ##全局函数
-WaitForSystemExit是一个全局函数，用于等待用户输入ctrl+C以结束进程。
+antnet.WaitForSystemExit是一个全局函数，用于等待用户输入ctrl+C以结束进程。
