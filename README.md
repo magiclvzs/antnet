@@ -120,8 +120,8 @@ type GetGamerLevel struct {
 	Level int `match:"k"`
 }
 ```
-   
-1. Get字段，表示方法，比如get，set，reload，这种情况我只需要输入方法即可，而tag `match:"k"`则表示只需要匹配字段名即可   
+三个字段解释如下：    
+1. Get字段，表示方法，比如get，set，reload，这种情况我只需要输入方法即可，而tag `match:"k"`则表示只需要匹配字段名即可   
 2. Gamer字段，表示玩家id，没有tag，对于没有tag的字段，解析器会认为需要匹配字段名和值，比如输入gamer 1 会被认为合法，而gamer test则不合法，因为test不是int   
 3. Level字段，表示玩家等级，有tag，表示只需要匹配level这个字段名即可。    
 定义好结构体之后我们需要注册到解析器，使用如下代码注册即可：   
