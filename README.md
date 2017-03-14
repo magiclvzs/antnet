@@ -88,7 +88,7 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
 ##全局变量
 为了方便使用antnet封装了一些全局变量：
-1. StartTick 用于标识antnet启动的时刻，是一个毫秒级的时间戳  
+1. StartTick 用于标识antnet启动的时刻，是一个毫秒级的时间戳    
 2. NowTick 用于标识antnet现在的时刻，是一个自动变化的毫秒级时间戳  
 ##全局函数
 为了方便使用antnet封装了一些全局函数以供调用：
