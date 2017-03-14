@@ -81,4 +81,8 @@ type IMsgHandler interface {
 
 当然，一般情况，你只需在你的处理器里面添加antnet.DefMsgHandler定义即可。  
 在antnet.DefMsgHandler里面，同样定义了Register和RegisterMsg函数，原理和解析器一样，也是为了区分不同的输入。   
-如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。    
+如果你没有注册任何消息处理函数，系统会自动调用OnProcessMsg函数，如果你有定义的话。    
+##启动服务
+启动一个网络服务器使用antnet.StartServer函数，他被定义在msgque.go文件里面，一个服务目前需要一个处理器和一个解析器才可以运行。
+##全局函数
+WaitForSystemExit是一个全局函数，用于等待用户输入ctrl+C以结束进程。
