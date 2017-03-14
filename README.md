@@ -17,12 +17,15 @@ func main() {
 ```
 通过上面的代码我们就实现了一个最简单的echo服务器。   
 现在打开命令行，执行telent 127.0.0.1 6666，输入一个字符串，回车后你将收到原样的回复消息。    
+
 ##代码组织
-antnet尽可能把功能相关的代码组织到一块，让你能快速找到代码，比如parser打头的文件表示解析器相关，msgque打头的文件表示消息队列相关。
+antnet尽可能把功能相关的代码组织到一块，让你能快速找到代码，比如parser打头的文件表示解析器相关，msgque打头的文件表示消息队列相关。    
+
 ##依赖项
 github.com/golang/protobuf   
 github.com/vmihailenco/msgpack   
 github.com/go-redis/redis   
+
 ##消息头
 对于一个网络服务器，我们首先需要定义的是消息头，antnet的消息头长度为12个字节，定义如下
 ```
@@ -40,6 +43,7 @@ type MessageHead struct {
 index用于标识唯一的一次请求，客户端应该自增方式增加index，服务器会原样返回，这样就让客户端可以唯一标识每次请求。  
 cmd和act，index共同组成了一个消息的tag，服务器在返回时往往需要原样返回一个消息的tag。  
 flags是一个消息的选项，比如消息是否压缩，是否加密等等。   
+
 ##消息
 ```
 type Message struct {
