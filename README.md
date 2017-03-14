@@ -136,7 +136,8 @@ antnet会为每个tcp链接建立两个goroutine进行服务一个用于读，�
 14. ParseBaseKind 字符串到特定类型的转化  
 15. CmdAct 将cmd和act转为一个int   
 16. SetTomeout 设置一个定时器
-17. LogXXX 日志系列函数
+17. DelTimeout 删除定时器
+18. LogXXX 日志系列函数
 
 ##日志
 antnet会默认会产生一个日志系统，通过antnet.Logxxx即可输出不同等级的日志。    
