@@ -10,52 +10,9 @@ import (
 )
 
 type tcpMsgQue struct {
-	id        uint32        //唯一标示
-	conn      net.Conn      //连接
-	listener  net.Listener  //监听
-	cwrite    chan *Message //写入通道
-	stop      int32         //停止标记
-	msgTyp    MsgType       //消息类型
-	msgqueTyp MsgQueType    //通道类型
-
-	handler       IMsgHandler //处理者
-	parser        IParser
-	parserFactory *Parser
-	timeout       int //传输超时
-
-	user interface{}
-}
-
-var DefMsgQueTimeout int = 180
-
-func (r *tcpMsgQue) SetUser(user interface{}) {
-	r.user = user
-}
-
-func (r *tcpMsgQue) User() interface{} {
-	return r.user
-}
-func (r *tcpMsgQue) GetHandler() IMsgHandler {
-	return r.handler
-}
-func (r *tcpMsgQue) GetMsgType() MsgType {
-	return r.msgTyp
-}
-
-func (r *tcpMsgQue) GetMsgQueType() MsgQueType {
-	return r.msgqueTyp
-}
-
-func (r *tcpMsgQue) Id() uint32 {
-	return r.id
-}
-
-func (r *tcpMsgQue) SetTimeout(t int) {
-	r.timeout = t
-}
-
-func (r *tcpMsgQue) GetConnType() ConnType {
-	return ConnTypeTcp
+	msgQue
+	conn     net.Conn     //连接
+	listener net.Listener //监听
 }
 
 func (r *tcpMsgQue) Stop() {
@@ -68,14 +25,24 @@ func (r *tcpMsgQue) Stop() {
 				tcp.Close()
 			}
 		}
-
-		r.handler.OnDelMsgQueue(r)
+		if r.init {
+			r.handler.OnDelMsgQueue(r)
+		}
 		LogInfo("msgque close id:%d", r.id)
 
 		msgqueMapSync.Lock()
 		delete(msgqueMap, r.id)
 		msgqueMapSync.Unlock()
 	}
+}
+
+func (r *tcpMsgQue) IsStop() bool {
+	if r.stop == 0 {
+		if IsStop() {
+			r.Stop()
+		}
+	}
+	return r.stop == 1
 }
 
 func (r *tcpMsgQue) LocalAddr() string {
@@ -94,17 +61,8 @@ func (r *tcpMsgQue) RemoteAddr() string {
 	return ""
 }
 
-func (r *tcpMsgQue) IsStop() bool {
-	if r.stop == 0 {
-		if IsStop() {
-			r.Stop()
-		}
-	}
-	return r.stop == 1
-}
-
 func (r *tcpMsgQue) readMsg() {
-	headData := make([]byte, MessageHeadSize)
+	headData := make([]byte, MsgHeadSize)
 	var data []byte
 	var head *MessageHead
 
@@ -193,7 +151,7 @@ func (r *tcpMsgQue) writeMsg() {
 		}
 		if m != nil {
 			r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
-			if writeCount < MessageHeadSize {
+			if writeCount < MsgHeadSize {
 				n, err := r.conn.Write(head[writeCount:])
 				if err != nil {
 					LogError("msgque write id:%v err:%v", r.id, err)
@@ -203,8 +161,8 @@ func (r *tcpMsgQue) writeMsg() {
 				writeCount += n
 			}
 
-			if writeCount >= MessageHeadSize && m.Data != nil {
-				n, err := r.conn.Write(m.Data[writeCount-MessageHeadSize : int(m.Head.Len)])
+			if writeCount >= MsgHeadSize && m.Data != nil {
+				n, err := r.conn.Write(m.Data[writeCount-MsgHeadSize : int(m.Head.Len)])
 				if err == io.EOF {
 					LogError("msgque write id:%v err:%v", r.id, err)
 					r.Stop()
@@ -213,7 +171,7 @@ func (r *tcpMsgQue) writeMsg() {
 				writeCount += n
 			}
 
-			if writeCount == int(m.Head.Len)+MessageHeadSize {
+			if writeCount == int(m.Head.Len)+MsgHeadSize {
 				writeCount = 0
 				m = nil
 			}
@@ -370,6 +328,7 @@ func (r *tcpMsgQue) listen() {
 				msgque := newTcpAccept(c, r.msgTyp, r.handler, r.parserFactory)
 				LogInfo("process accept for msgque:%d", msgque.id)
 				if r.handler.OnNewMsgQue(msgque) {
+					msgque.init = true
 					Go(func() {
 						LogInfo("process read for msgque:%d", msgque.id)
 						msgque.read()
@@ -393,13 +352,16 @@ func (r *tcpMsgQue) listen() {
 
 func newTcpConn(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
 	msgque := tcpMsgQue{
-		id:        atomic.AddUint32(&msgQueId, 1),
-		conn:      conn,
-		cwrite:    make(chan *Message, 64),
-		msgTyp:    msgtyp,
-		handler:   handler,
-		timeout:   DefMsgQueTimeout,
-		msgqueTyp: MsgQueTypeConn,
+		msgQue: msgQue{
+			id:            atomic.AddUint32(&msgQueId, 1),
+			cwrite:        make(chan *Message, 64),
+			msgTyp:        msgtyp,
+			handler:       handler,
+			timeout:       DefMsgQueTimeout,
+			msgqueTyp:     MsgQueTypeConn,
+			parserFactory: parser,
+		},
+		conn: conn,
 	}
 	if parser != nil {
 		msgque.parser = parser.Get()
@@ -413,13 +375,16 @@ func newTcpConn(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pars
 
 func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
 	msgque := tcpMsgQue{
-		id:        atomic.AddUint32(&msgQueId, 1),
-		conn:      conn,
-		cwrite:    make(chan *Message, 64),
-		msgTyp:    msgtyp,
-		handler:   handler,
-		timeout:   DefMsgQueTimeout,
-		msgqueTyp: MsgQueTypeAccept,
+		msgQue: msgQue{
+			id:            atomic.AddUint32(&msgQueId, 1),
+			cwrite:        make(chan *Message, 64),
+			msgTyp:        msgtyp,
+			handler:       handler,
+			timeout:       DefMsgQueTimeout,
+			msgqueTyp:     MsgQueTypeAccept,
+			parserFactory: parser,
+		},
+		conn: conn,
 	}
 	if parser != nil {
 		msgque.parser = parser.Get()
@@ -431,19 +396,21 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pa
 	return &msgque
 }
 
-func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
+func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr string) *tcpMsgQue {
 	msgque := tcpMsgQue{
-		id:            atomic.AddUint32(&msgQueId, 1),
-		listener:      listener,
-		msgTyp:        msgtyp,
-		handler:       handler,
-		parserFactory: parser,
-		msgqueTyp:     MsgQueTypeListen,
+		msgQue: msgQue{
+			id:            atomic.AddUint32(&msgQueId, 1),
+			msgTyp:        msgtyp,
+			handler:       handler,
+			parserFactory: parser,
+			msgqueTyp:     MsgQueTypeListen,
+		},
+		listener: listener,
 	}
 
 	msgqueMapSync.Lock()
 	msgqueMap[msgque.id] = &msgque
 	msgqueMapSync.Unlock()
-	LogInfo("new tcp listen id:%d addr:%s", msgque.id, listener.Addr().String())
+	LogInfo("new tcp listen id:%d addr:%s", msgque.id, addr)
 	return &msgque
 }

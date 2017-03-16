@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var DefMsgQueTimeout int = 180
+
 type MsgType int
 
 const (
@@ -47,11 +49,66 @@ type IMsgQue interface {
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
 	SetTimeout(t int)
+	GetTimeout() int
 
 	GetHandler() IMsgHandler
 
 	SetUser(user interface{})
 	User() interface{}
+}
+
+type msgQue struct {
+	id uint32 //唯一标示
+
+	cwrite    chan *Message //写入通道
+	stop      int32         //停止标记
+	msgTyp    MsgType       //消息类型
+	msgqueTyp MsgQueType    //通道类型
+
+	handler       IMsgHandler //处理者
+	parser        IParser
+	parserFactory *Parser
+	timeout       int //传输超时
+
+	init bool
+
+	user interface{}
+}
+
+func (r *msgQue) SetUser(user interface{}) {
+	r.user = user
+}
+
+func (r *msgQue) User() interface{} {
+	return r.user
+}
+
+func (r *msgQue) GetHandler() IMsgHandler {
+	return r.handler
+}
+
+func (r *msgQue) GetMsgType() MsgType {
+	return r.msgTyp
+}
+
+func (r *msgQue) GetMsgQueType() MsgQueType {
+	return r.msgqueTyp
+}
+
+func (r *msgQue) Id() uint32 {
+	return r.id
+}
+
+func (r *msgQue) SetTimeout(t int) {
+	r.timeout = t
+}
+
+func (r *msgQue) GetTimeout() int {
+	return r.timeout
+}
+
+func (r *msgQue) GetConnType() ConnType {
+	return ConnTypeTcp
 }
 
 type HandlerFunc func(msgque IMsgQue, msg *Message) bool
@@ -120,11 +177,25 @@ func (r *EchoMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool {
 func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) error {
 	addrs := strings.Split(addr, "://")
 	if addrs[0] == "udp" {
+		naddr, err := net.ResolveUDPAddr(addrs[0], addrs[1])
+		if err != nil {
+			return err
+		}
+		conn, err := net.ListenUDP(addrs[0], naddr)
+		if err != nil {
+			return err
+		}
+		msgque := newUdpListen(conn, typ, handler, parser, addr)
+		Go(func() {
+			LogInfo("process listen for msgque:%d", msgque.id)
+			msgque.listen()
+			LogInfo("process listen end for msgque:%d", msgque.id)
+		})
 
 	} else {
 		listen, err := net.Listen(addrs[0], addrs[1])
 		if err == nil {
-			msgque := newTcpListen(listen, typ, handler, parser)
+			msgque := newTcpListen(listen, typ, handler, parser, addr)
 			Go(func() {
 				LogInfo("process listen for msgque:%d", msgque.id)
 				msgque.listen()

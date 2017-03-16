@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MessageHeadSize = 12
+	MsgHeadSize = 12
 )
 
 const (
@@ -34,7 +34,7 @@ type MessageHead struct {
 
 func (r *MessageHead) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
-	buf.Grow(MessageHeadSize)
+	buf.Grow(MsgHeadSize)
 	typ := binary.LittleEndian
 	binary.Write(buf, typ, r.Len)
 	binary.Write(buf, typ, r.Error)

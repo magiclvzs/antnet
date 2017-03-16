@@ -52,12 +52,12 @@ type timeNode struct {
 	Args     interface{}
 }
 
-func SetTomeout(name string, inteval int, handler func(interface{}) uint32, args interface{}) {
-	setTomeout(name, uint32(inteval), handler, args)
+func SetTimeout(name string, inteval int, handler func(interface{}) uint32, args interface{}) {
+	setTimeout(name, uint32(inteval), handler, args)
 	LogInfo("new timerout:%v inteval:%v", name, inteval)
 }
 
-func setTomeout(name string, inteval uint32, handler func(interface{}) uint32, args interface{}) {
+func setTimeout(name string, inteval uint32, handler func(interface{}) uint32, args interface{}) {
 	if inteval <= 0 {
 		return
 	}
@@ -121,10 +121,10 @@ func tick() {
 					if 0 == bucket || 0 == node.Inteval {
 						t := node.Callback(node.Args)
 						if t > 0 {
-							setTomeout(node.Name, t, node.Callback, node.Args)
+							setTimeout(node.Name, t, node.Callback, node.Args)
 						}
 					} else {
-						setTomeout(node.Name, node.Inteval, node.Callback, node.Args)
+						setTimeout(node.Name, node.Inteval, node.Callback, node.Args)
 					}
 				})
 			}

@@ -2,6 +2,7 @@ package antnet
 
 import (
 	"net"
+	"strings"
 
 	"gopkg.in/redis.v5"
 )
@@ -20,8 +21,26 @@ type Redis struct {
 }
 
 func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}, error) {
-	re, err := r.EvalSha(r.manager.script_map_hash[cmd], keys, args...).Result()
+	hash, ok := r.manager.script_map_hash[cmd]
+	if !ok {
+		LogError("redis script error cmd not found cmd:%v", cmd)
+		return nil, ErrDBErr
+	}
+	re, err := r.EvalSha(hash, keys, args...).Result()
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
+			for _, v := range r.manager.script_map {
+				_, err := r.ScriptLoad(v).Result()
+				if err != nil {
+					LogError("redis script load error errstr:%s", err)
+					return nil, ErrDBErr
+				}
+			}
+			re, err := r.EvalSha(hash, keys, args...).Result()
+			if err == nil {
+				return re, nil
+			}
+		}
 		LogError("redis script error errstr:%s", err)
 		return nil, ErrDBErr
 	}
