@@ -3,6 +3,7 @@ package antnet
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,6 +16,9 @@ import (
 	"time"
 )
 
+func Print(a ...interface{}) (int, error) {
+	return fmt.Print(a...)
+}
 func Println(a ...interface{}) (int, error) {
 	return fmt.Println(a...)
 }
@@ -199,6 +203,57 @@ func Atoi(str string) int {
 
 func Itoa(num int) string {
 	return strconv.Itoa(num)
+}
+
+func GetSelfIp() (ips []string) {
+	addrs, _ := net.InterfaceAddrs()
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok {
+			if ipnet.IP.To4() != nil {
+				ips = append(ips, ipnet.IP.String())
+			}
+		}
+	}
+	return
+}
+
+func GetSelfIntraIp() (ips []string) {
+	addrs, _ := net.InterfaceAddrs()
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok {
+			if ipnet.IP.To4() != nil {
+				if ipnet.IP.IsLoopback() {
+					ips = append(ips, ipnet.IP.String())
+				} else {
+					ipA := strings.Split(ipnet.IP.String(), ".")[0]
+					if ipA == "10" || ipA == "172" || ipA == "192" {
+						ips = append(ips, ipnet.IP.String())
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+func GetSelfExtraIp() (ips []string) {
+	addrs, _ := net.InterfaceAddrs()
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok {
+			if ipnet.IP.To4() != nil {
+				if ipnet.IP.IsLoopback() {
+					continue
+				} else {
+					ipA := strings.Split(ipnet.IP.String(), ".")[0]
+					if ipA == "10" || ipA == "172" || ipA == "192" {
+						continue
+					}
+					ips = append(ips, ipnet.IP.String())
+				}
+			}
+		}
+	}
+	return
 }
 
 func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {
