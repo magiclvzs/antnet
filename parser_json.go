@@ -36,7 +36,7 @@ func (r *jsonParser) ParseC2S(msg *Message) (IMsgParser, error) {
 		p, ok := r.factory.msgMap[msg.Head.CmdAct()]
 		if ok {
 			if p.C2S() != nil {
-				_, err := JsonUnPack(msg.Data, p.C2S())
+				err := JsonUnPack(msg.Data, p.C2S())
 				if err != nil {
 					return nil, err
 				}
@@ -69,16 +69,16 @@ func (r *jsonParser) GetErrType() ParseErrType {
 	return r.factory.ErrType
 }
 
-func JsonUnPack(data []byte, msg interface{}) (interface{}, error) {
+func JsonUnPack(data []byte, msg interface{}) error {
 	if data == nil || msg == nil {
-		return nil, ErrJsonUnPack
+		return ErrJsonUnPack
 	}
 
 	err := json.Unmarshal(data, msg)
 	if err != nil {
-		return nil, ErrJsonUnPack
+		return ErrJsonUnPack
 	}
-	return msg, nil
+	return nil
 }
 
 func JsonPack(msg interface{}) ([]byte, error) {
@@ -89,6 +89,7 @@ func JsonPack(msg interface{}) ([]byte, error) {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		LogInfo("")
+		return nil, ErrJsonPack
 	}
 
 	return data, nil

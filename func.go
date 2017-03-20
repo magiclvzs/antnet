@@ -3,6 +3,7 @@ package antnet
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -82,6 +83,10 @@ func Go(fn func()) {
 		waitAll.Done()
 		LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, ^int32(0)))
 	}()
+}
+
+func Now() time.Time {
+	return time.Now()
 }
 
 func CmdAct(cmd, act uint8) int {
@@ -234,6 +239,18 @@ func GetSelfIntraIp() (ips []string) {
 		}
 	}
 	return
+}
+
+func ReadFile(path string) ([]byte, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, ErrFileRead
+	}
+	return data, nil
+}
+
+func SplitStr(s string, sep string) []string {
+	return strings.Split(s, sep)
 }
 
 func GetSelfExtraIp() (ips []string) {

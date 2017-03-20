@@ -15,11 +15,13 @@ func timerTick() {
 	}
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
+	Timestamp = NowTick / 1000
 	Go(func() {
 		for IsRuning() {
 			Sleep(1)
 			nowTick := NowTick
 			NowTick = time.Now().UnixNano() / 1000000
+			Timestamp = NowTick / 1000
 			for nowTick < NowTick {
 				nowTick++
 				tick()

@@ -16,7 +16,7 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	p, ok := r.factory.msgMap[msg.Head.CmdAct()]
 	if ok {
 		if p.C2S() != nil {
-			_, err := PBUnPack(msg.Data, p.C2S())
+			err := PBUnPack(msg.Data, p.C2S())
 			if err != nil {
 				return nil, err
 			}
@@ -45,16 +45,16 @@ func (r *pBParser) GetType() ParserType {
 func (r *pBParser) GetErrType() ParseErrType {
 	return r.factory.ErrType
 }
-func PBUnPack(data []byte, msg interface{}) (interface{}, error) {
+func PBUnPack(data []byte, msg interface{}) error {
 	if data == nil || msg == nil {
-		return nil, ErrPBUnPack
+		return ErrPBUnPack
 	}
 
 	err := proto.Unmarshal(data, msg.(proto.Message))
 	if err != nil {
-		return nil, ErrPBUnPack
+		return ErrPBUnPack
 	}
-	return msg, nil
+	return nil
 }
 
 func PBPack(msg interface{}) ([]byte, error) {
