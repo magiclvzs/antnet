@@ -115,7 +115,7 @@ type HandlerFunc func(msgque IMsgQue, msg *Message) bool
 
 type IMsgHandler interface {
 	OnNewMsgQue(msgque IMsgQue) bool                //新的消息队列
-	OnDelMsgQueue(msgque IMsgQue)                   //消息队列关闭
+	OnDelMsgQue(msgque IMsgQue)                     //消息队列关闭
 	OnProcessMsg(msgque IMsgQue, msg *Message) bool //默认的消息处理函数
 	OnConnectComplete(msgque IMsgQue, ok bool) bool //连接成功
 	GetHandlerFunc(msg *Message) HandlerFunc        //根据消息获得处理函数
@@ -132,7 +132,7 @@ type DefMsgHandler struct {
 }
 
 func (r *DefMsgHandler) OnNewMsgQue(msgque IMsgQue) bool                { return true }
-func (r *DefMsgHandler) OnDelMsgQueue(msgque IMsgQue)                   {}
+func (r *DefMsgHandler) OnDelMsgQue(msgque IMsgQue)                     {}
 func (r *DefMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool { return true }
 func (r *DefMsgHandler) OnConnectComplete(msgque IMsgQue, ok bool) bool { return true }
 func (r *DefMsgHandler) GetHandlerFunc(msg *Message) HandlerFunc {
@@ -192,9 +192,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 		}
 		msgque := newUdpListen(conn, typ, handler, parser, addr)
 		Go(func() {
-			LogInfo("process listen for msgque:%d", msgque.id)
+			LogDebug("process listen for msgque:%d", msgque.id)
 			msgque.listen()
-			LogInfo("process listen end for msgque:%d", msgque.id)
+			LogDebug("process listen end for msgque:%d", msgque.id)
 		})
 
 	} else {
@@ -202,9 +202,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 		if err == nil {
 			msgque := newTcpListen(listen, typ, handler, parser, addr)
 			Go(func() {
-				LogInfo("process listen for msgque:%d", msgque.id)
+				LogDebug("process listen for msgque:%d", msgque.id)
 				msgque.listen()
-				LogInfo("process listen end for msgque:%d", msgque.id)
+				LogDebug("process listen end for msgque:%d", msgque.id)
 			})
 		} else {
 			LogError(err)
@@ -221,19 +221,19 @@ func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, 
 	}
 	if c != nil {
 		msgque := newTcpConn(c, typ, handler, parser)
-		LogInfo("process connect for msgque:%d", msgque.id)
+		LogDebug("process connect for msgque:%d", msgque.id)
 		if handler.OnConnectComplete(msgque, true) && handler.OnNewMsgQue(msgque) {
 			Go(func() {
-				LogInfo("process read for msgque:%d", msgque.id)
+				LogDebug("process read for msgque:%d", msgque.id)
 				msgque.read()
-				LogInfo("process read end for msgque:%d", msgque.id)
+				LogDebug("process read end for msgque:%d", msgque.id)
 			})
 			Go(func() {
-				LogInfo("process write for msgque:%d", msgque.id)
+				LogDebug("process write for msgque:%d", msgque.id)
 				msgque.write()
-				LogInfo("process write end for msgque:%d", msgque.id)
+				LogDebug("process write end for msgque:%d", msgque.id)
 			})
 		}
-		LogInfo("process connect end for msgque:%d", msgque.id)
+		LogDebug("process connect end for msgque:%d", msgque.id)
 	}
 }

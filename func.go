@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -75,6 +76,14 @@ func IsRuning() bool {
 	return stop == 0
 }
 
+func Now() time.Time {
+	return time.Now()
+}
+
+func CmdAct(cmd, act uint8) int {
+	return int(cmd<<8 + act)
+}
+
 func Go(fn func()) {
 	waitAll.Add(1)
 	LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, 1))
@@ -85,12 +94,14 @@ func Go(fn func()) {
 	}()
 }
 
-func Now() time.Time {
-	return time.Now()
-}
-
-func CmdAct(cmd, act uint8) int {
-	return int(cmd<<8 + act)
+func GoArgs(fn func(...interface{}), args ...interface{}) {
+	waitAll.Add(1)
+	LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, 1))
+	go func() {
+		fn(args...)
+		waitAll.Done()
+		LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, ^int32(0)))
+	}()
 }
 
 func Go2(fn func(cstop chan struct{})) bool {
@@ -192,6 +203,11 @@ func Daemon(skip []string) {
 	}
 }
 
+func LogStack() {
+	buf := make([]byte, 1<<12)
+	LogError(string(buf[:runtime.Stack(buf, false)]))
+}
+
 func GetStatis() *Statis {
 	statis.GoCount = int(gocount)
 	statis.MsgqueCount = len(msgqueMap)
@@ -251,6 +267,10 @@ func ReadFile(path string) ([]byte, error) {
 
 func SplitStr(s string, sep string) []string {
 	return strings.Split(s, sep)
+}
+
+func TrimStr(s string) string {
+	return strings.TrimSpace(s)
 }
 
 func GetSelfExtraIp() (ips []string) {

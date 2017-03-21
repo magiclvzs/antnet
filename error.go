@@ -30,6 +30,9 @@ var (
 	ErrJsonUnPack    = NewError("json解析错误", 9)
 	ErrCmdUnPack     = NewError("cmd解析错误", 10)
 	ErrFileRead      = NewError("文件读取错误", 100)
+
+	ErrNetTimeout = NewError("网络超时", 200)
+
 	ErrErrIdNotFound = NewError("错误没有对应的错误码", 255)
 )
 

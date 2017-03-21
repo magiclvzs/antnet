@@ -105,7 +105,7 @@ func (r *Parser) Get() IParser {
 	return r.parser
 }
 
-func (r *Parser) RegisterFunc(cmd uint8, act uint8, c2sFunc ParseFunc, s2cFunc ParseFunc) {
+func (r *Parser) RegisterFunc(cmd, act uint8, c2sFunc ParseFunc, s2cFunc ParseFunc) {
 	if r.msgMap == nil {
 		r.msgMap = map[int]MsgParser{}
 	}
@@ -113,7 +113,7 @@ func (r *Parser) RegisterFunc(cmd uint8, act uint8, c2sFunc ParseFunc, s2cFunc P
 	r.msgMap[CmdAct(cmd, act)] = MsgParser{c2sFunc: c2sFunc, s2cFunc: s2cFunc}
 }
 
-func (r *Parser) Register(cmd uint8, act uint8, c2s interface{}, s2c interface{}) {
+func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
 	if r.msgMap == nil {
 		r.msgMap = map[int]MsgParser{}
 	}

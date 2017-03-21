@@ -136,3 +136,13 @@ func NewMsg(cmd uint8, act uint8, index uint16, err uint16, data []byte) *Messag
 		Data: data,
 	}
 }
+
+func NewTagMsg(cmd uint8, act uint8, index uint16) *Message {
+	return &Message{
+		Head: &MessageHead{
+			Cmd:   cmd,
+			Act:   act,
+			Index: index,
+		},
+	}
+}

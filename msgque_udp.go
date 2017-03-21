@@ -25,7 +25,7 @@ func (r *udpMsgQue) Stop() {
 		}
 
 		if r.init {
-			r.handler.OnDelMsgQueue(r)
+			r.handler.OnDelMsgQue(r)
 		}
 		LogInfo("msgque close id:%d", r.id)
 
@@ -98,7 +98,7 @@ func (r *udpMsgQue) read() {
 			if !r.handler.OnNewMsgQue(r) {
 				break
 			}
-			SetTimeout(r.addr.String(), r.timeout*1000, func(arg interface{}) uint32 {
+			SetTimeout(r.addr.String(), r.timeout*1000, func(args ...interface{}) uint32 {
 				left := int(NowTick - r.lastTick)
 				if left >= r.timeout*1000 {
 					r.Stop()
@@ -283,17 +283,17 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 	msgqueMapSync.Unlock()
 
 	Go(func() {
-		LogInfo("process read for msgque:%d", msgque.id)
+		LogDebug("process read for msgque:%d", msgque.id)
 		msgque.read()
-		LogInfo("process read end for msgque:%d", msgque.id)
+		LogDebug("process read end for msgque:%d", msgque.id)
 	})
 	Go(func() {
-		LogInfo("process write for msgque:%d", msgque.id)
+		LogDebug("process write for msgque:%d", msgque.id)
 		msgque.write()
-		LogInfo("process write end for msgque:%d", msgque.id)
+		LogDebug("process write end for msgque:%d", msgque.id)
 	})
 
-	LogInfo("new msgque id:%d from addr:%s", msgque.id, addr.String())
+	LogDebug("new msgque id:%d from addr:%s", msgque.id, addr.String())
 	return &msgque
 }
 

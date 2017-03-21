@@ -40,7 +40,7 @@ func (r *jsonParser) ParseC2S(msg *Message) (IMsgParser, error) {
 				if err != nil {
 					return nil, err
 				}
-
+				p.parser = r
 				return &p, nil
 			}
 		}

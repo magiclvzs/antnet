@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"io"
 	"net"
-	"runtime"
 	"sync/atomic"
 	"time"
 )
@@ -26,7 +25,7 @@ func (r *tcpMsgQue) Stop() {
 			}
 		}
 		if r.init {
-			r.handler.OnDelMsgQueue(r)
+			r.handler.OnDelMsgQue(r)
 		}
 		LogInfo("msgque close id:%d", r.id)
 
@@ -287,8 +286,7 @@ func (r *tcpMsgQue) read() {
 	defer func() {
 		if err := recover(); err != nil {
 			LogError("msgque read panic id:%v err:%v", r.id, err.(error))
-			buf := make([]byte, 1<<12)
-			LogError(string(buf[:runtime.Stack(buf, false)]))
+			LogStack()
 		}
 		r.Stop()
 	}()
@@ -326,23 +324,23 @@ func (r *tcpMsgQue) listen() {
 		} else {
 			Go(func() {
 				msgque := newTcpAccept(c, r.msgTyp, r.handler, r.parserFactory)
-				LogInfo("process accept for msgque:%d", msgque.id)
+				LogDebug("process accept for msgque:%d", msgque.id)
 				if r.handler.OnNewMsgQue(msgque) {
 					msgque.init = true
 					Go(func() {
-						LogInfo("process read for msgque:%d", msgque.id)
+						LogDebug("process read for msgque:%d", msgque.id)
 						msgque.read()
-						LogInfo("process read end for msgque:%d", msgque.id)
+						LogDebug("process read end for msgque:%d", msgque.id)
 					})
 					Go(func() {
-						LogInfo("process write for msgque:%d", msgque.id)
+						LogDebug("process write for msgque:%d", msgque.id)
 						msgque.write()
-						LogInfo("process write end for msgque:%d", msgque.id)
+						LogDebug("process write end for msgque:%d", msgque.id)
 					})
 				} else {
 					msgque.Stop()
 				}
-				LogInfo("process accept end for msgque:%d", msgque.id)
+				LogDebug("process accept end for msgque:%d", msgque.id)
 			})
 		}
 	}

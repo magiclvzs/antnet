@@ -21,21 +21,27 @@ type Redis struct {
 }
 
 func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}, error) {
-	hash, ok := r.manager.script_map_hash[cmd]
-	if !ok {
-		LogError("redis script error cmd not found cmd:%v", cmd)
-		return nil, ErrDBErr
-	}
+	hash, _ := r.manager.script_map_hash[cmd]
 	re, err := r.EvalSha(hash, keys, args...).Result()
 	if err != nil {
+		_, ok := r.manager.script_map[cmd]
+		if !ok {
+			LogError("redis script error cmd not found cmd:%v", cmd)
+			return nil, ErrDBErr
+		}
+
 		if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-			for _, v := range r.manager.script_map {
-				_, err := r.ScriptLoad(v).Result()
+			LogWarn("try reload redis script")
+			for k, v := range r.manager.script_map {
+				hash, err := r.ScriptLoad(v).Result()
 				if err != nil {
 					LogError("redis script load error errstr:%s", err)
 					return nil, ErrDBErr
 				}
+				r.manager.script_map_hash[k] = hash
 			}
+
+			hash, _ := r.manager.script_map_hash[cmd]
 			re, err := r.EvalSha(hash, keys, args...).Result()
 			if err == nil {
 				return re, nil
@@ -129,7 +135,7 @@ func NewRedisManager(conf []*RedisConfig) *RedisManager {
 			conf:    v,
 			manager: redisManager,
 		}
-
+		LogInfo("connect to redis %v", v.Addr)
 		redisManager.subMap[v.Addr] = re
 		redisManager.dbs = append(redisManager.dbs, re)
 	}
