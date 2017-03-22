@@ -20,6 +20,36 @@ type Redis struct {
 	manager *RedisManager
 }
 
+func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, error) {
+	data, err := r.Script(cmd, keys, args...)
+	if err != nil {
+		return "", err
+	}
+	errcode, ok := data.(int64)
+	if ok {
+		return "", GetErrById(uint16(errcode))
+	}
+
+	str, ok := data.(string)
+	if !ok {
+		return "", ErrDBDataType
+	}
+
+	return str, nil
+}
+
+func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64, error) {
+	data, err := r.Script(cmd, keys, args...)
+	if err != nil {
+		return 0, err
+	}
+	code, ok := data.(int64)
+	if ok {
+		return code, nil
+	}
+	return 0, ErrDBDataType
+}
+
 func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}, error) {
 	hash, _ := r.manager.script_map_hash[cmd]
 	re, err := r.EvalSha(hash, keys, args...).Result()

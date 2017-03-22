@@ -30,8 +30,8 @@ var (
 	ErrJsonUnPack    = NewError("json解析错误", 9)
 	ErrCmdUnPack     = NewError("cmd解析错误", 10)
 	ErrFileRead      = NewError("文件读取错误", 100)
-
-	ErrNetTimeout = NewError("网络超时", 200)
+	ErrDBDataType    = NewError("数据库数据类型错误", 101)
+	ErrNetTimeout    = NewError("网络超时", 200)
 
 	ErrErrIdNotFound = NewError("错误没有对应的错误码", 255)
 )
@@ -42,7 +42,7 @@ func GetErrById(id uint16) error {
 	if e, ok := idErrMap[id]; ok {
 		return e
 	}
-	return nil
+	return ErrErrIdNotFound
 }
 
 func GetErrId(err error) uint16 {
@@ -50,4 +50,16 @@ func GetErrId(err error) uint16 {
 		return id
 	}
 	return errIdMap[ErrErrIdNotFound]
+}
+
+type ErrJsonStr struct {
+	Error string `json:"error"`
+}
+
+func GetErrJsonStr(err error) string {
+	return string(GetErrJsonData(err))
+}
+func GetErrJsonData(err error) []byte {
+	data, _ := JsonPack(&ErrJsonStr{Error: err.Error()})
+	return data
 }

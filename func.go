@@ -1,6 +1,8 @@
 package antnet
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -82,6 +84,13 @@ func Now() time.Time {
 
 func CmdAct(cmd, act uint8) int {
 	return int(cmd<<8 + act)
+}
+
+func MD5Str(s string) string {
+	md5Ctx := md5.New()
+	md5Ctx.Write([]byte(s))
+	cipherStr := md5Ctx.Sum(nil)
+	return hex.EncodeToString(cipherStr)
 }
 
 func Go(fn func()) {
