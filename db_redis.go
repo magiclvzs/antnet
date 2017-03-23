@@ -27,7 +27,7 @@ func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, 
 	}
 	errcode, ok := data.(int64)
 	if ok {
-		return "", GetErrById(uint16(errcode))
+		return "", GetError(uint16(errcode))
 	}
 
 	str, ok := data.(string)

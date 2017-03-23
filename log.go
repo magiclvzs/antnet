@@ -178,7 +178,9 @@ func (r *Log) SetLogger(logger ILogger, imme bool) {
 		}
 	}
 }
-
+func (r *Log) Level() LogLevel {
+	return r.level
+}
 func (r *Log) SetLevel(level LogLevel) {
 	r.level = level
 }
@@ -267,21 +269,21 @@ func NewLog(bufsize int, logger ...ILogger) *Log {
 }
 
 func LogInfo(v ...interface{}) {
-	LogDef.Info(v...)
+	DefLog.Info(v...)
 }
 
 func LogDebug(v ...interface{}) {
-	LogDef.Debug(v...)
+	DefLog.Debug(v...)
 }
 
 func LogError(v ...interface{}) {
-	LogDef.Error(v...)
+	DefLog.Error(v...)
 }
 
 func LogFatal(v ...interface{}) {
-	LogDef.Fatal(v...)
+	DefLog.Fatal(v...)
 }
 
 func LogWarn(v ...interface{}) {
-	LogDef.Warn(v...)
+	DefLog.Warn(v...)
 }

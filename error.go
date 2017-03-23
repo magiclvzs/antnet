@@ -38,7 +38,7 @@ var (
 
 var MinUserError = 256
 
-func GetErrById(id uint16) error {
+func GetError(id uint16) error {
 	if e, ok := idErrMap[id]; ok {
 		return e
 	}
@@ -53,13 +53,14 @@ func GetErrId(err error) uint16 {
 }
 
 type ErrJsonStr struct {
-	Error string `json:"error"`
+	Error    int    `json:"error"`
+	ErrorStr string `json:"errstr"`
 }
 
 func GetErrJsonStr(err error) string {
 	return string(GetErrJsonData(err))
 }
 func GetErrJsonData(err error) []byte {
-	data, _ := JsonPack(&ErrJsonStr{Error: err.Error()})
+	data, _ := JsonPack(&ErrJsonStr{Error: int(GetErrId(err)), ErrorStr: err.Error()})
 	return data
 }

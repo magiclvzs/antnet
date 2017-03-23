@@ -95,11 +95,23 @@ func MD5Str(s string) string {
 
 func Go(fn func()) {
 	waitAll.Add(1)
-	LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, 1))
+	var debugStr string
+	c := atomic.AddInt32(&gocount, 1)
+	if DefLog.Level() <= LogLevelDebug {
+		_, file, line, _ := runtime.Caller(1)
+		i := strings.LastIndex(file, "/") + 1
+		i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
+		debugStr = Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
+		LogDebug("goroutine count:%d from:%s", c, debugStr)
+	}
 	go func() {
 		fn()
 		waitAll.Done()
-		LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, ^int32(0)))
+		c = atomic.AddInt32(&gocount, ^int32(0))
+
+		if DefLog.Level() <= LogLevelDebug {
+			LogDebug("goroutine count:%d from:%s", c, debugStr)
+		}
 	}()
 }
 
@@ -235,34 +247,59 @@ func Itoa(num int) string {
 	return strconv.Itoa(num)
 }
 
-func GetSelfIp() (ips []string) {
-	addrs, _ := net.InterfaceAddrs()
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok {
-			if ipnet.IP.To4() != nil {
-				ips = append(ips, ipnet.IP.String())
+func GetSelfIp(ifnames ...string) (ips []string) {
+	inters, _ := net.Interfaces()
+	if len(ifnames) == 0 {
+		ifnames = []string{"eth", "lo"}
+	}
+
+	filterFunc := func(name string) bool {
+		for _, v := range ifnames {
+			if strings.Index(name, v) != -1 {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, inter := range inters {
+		if !filterFunc(inter.Name) {
+			continue
+		}
+		addrs, _ := inter.Addrs()
+		for _, a := range addrs {
+			if ipnet, ok := a.(*net.IPNet); ok {
+				if ipnet.IP.To4() != nil {
+					ips = append(ips, ipnet.IP.String())
+				}
 			}
 		}
 	}
 	return
 }
 
-func GetSelfIntraIp() (ips []string) {
-	addrs, _ := net.InterfaceAddrs()
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok {
-			if ipnet.IP.To4() != nil {
-				if ipnet.IP.IsLoopback() {
-					ips = append(ips, ipnet.IP.String())
-				} else {
-					ipA := strings.Split(ipnet.IP.String(), ".")[0]
-					if ipA == "10" || ipA == "172" || ipA == "192" {
-						ips = append(ips, ipnet.IP.String())
-					}
-				}
-			}
+func GetSelfIntraIp(ifnames ...string) (ips []string) {
+	all := GetSelfIp(ifnames...)
+	for _, v := range all {
+		ipA := strings.Split(v, ".")[0]
+		if ipA == "10" || ipA == "172" || ipA == "192" || v == "127.0.0.1" {
+			ips = append(ips, v)
 		}
 	}
+
+	return
+}
+
+func GetSelfExtraIp(ifnames ...string) (ips []string) {
+	all := GetSelfIp(ifnames...)
+	for _, v := range all {
+		ipA := strings.Split(v, ".")[0]
+		if ipA == "10" || ipA == "172" || ipA == "192" || v == "127.0.0.1" {
+			continue
+		}
+		ips = append(ips, v)
+	}
+
 	return
 }
 
@@ -280,26 +317,6 @@ func SplitStr(s string, sep string) []string {
 
 func TrimStr(s string) string {
 	return strings.TrimSpace(s)
-}
-
-func GetSelfExtraIp() (ips []string) {
-	addrs, _ := net.InterfaceAddrs()
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok {
-			if ipnet.IP.To4() != nil {
-				if ipnet.IP.IsLoopback() {
-					continue
-				} else {
-					ipA := strings.Split(ipnet.IP.String(), ".")[0]
-					if ipA == "10" || ipA == "172" || ipA == "192" {
-						continue
-					}
-					ips = append(ips, ipnet.IP.String())
-				}
-			}
-		}
-	}
-	return
 }
 
 func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {

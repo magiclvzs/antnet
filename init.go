@@ -21,7 +21,7 @@ var stopForLog int32 //
 var stop int32       //停止标志
 
 var gocount int32 //goroutine数量
-var LogDef *Log   //日志
+var DefLog *Log   //日志
 
 var msgQueId uint32 //消息队列id
 
@@ -41,7 +41,7 @@ var Timestamp int64 = 0
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	LogDef = NewLog(10000)
-	LogDef.SetLogger(&ConsoleLogger{true}, true)
+	DefLog = NewLog(10000)
+	DefLog.SetLogger(&ConsoleLogger{true}, true)
 	timerTick()
 }
