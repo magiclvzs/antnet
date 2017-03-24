@@ -70,11 +70,6 @@ func (r *tcpMsgQue) readMsg() {
 		if head == nil {
 			_, err := io.ReadFull(r.conn, headData)
 			if err != nil {
-				if err != io.EOF {
-					LogError("msgque read id:%v err:%v", r.id, err)
-				} else {
-					LogInfo("msgque read close id:%v", r.id)
-				}
 				break
 			}
 
@@ -98,11 +93,6 @@ func (r *tcpMsgQue) readMsg() {
 		} else {
 			_, err := io.ReadFull(r.conn, data)
 			if err != nil {
-				if err != io.EOF {
-					LogError("msgque read id:%v err:%v", r.id, err)
-				} else {
-					LogInfo("msgque read close id:%v", r.id)
-				}
 				break
 			}
 			msg := &Message{Head: head, Data: data}
@@ -223,11 +213,6 @@ func (r *tcpMsgQue) readCmd() {
 		r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
 		data, err := reader.ReadBytes('\n')
 		if err != nil {
-			if err != io.EOF {
-				LogError("msgque read id:%v err:%v", r.id, err)
-			} else {
-				LogInfo("msgque read close id:%v", r.id)
-			}
 			break
 		}
 		msg := &Message{Data: data}
@@ -304,15 +289,15 @@ func (r *tcpMsgQue) write() {
 			LogError("msgque write panic id:%v err:%v", r.id, err.(error))
 			r.Stop()
 		}
+
+		if r.conn != nil {
+			r.conn.Close()
+		}
 	}()
 	if r.msgTyp == MsgTypeCmd {
 		r.writeCmd()
 	} else {
 		r.writeMsg()
-	}
-
-	if r.conn != nil {
-		r.conn.Close()
 	}
 }
 
@@ -324,23 +309,21 @@ func (r *tcpMsgQue) listen() {
 		} else {
 			Go(func() {
 				msgque := newTcpAccept(c, r.msgTyp, r.handler, r.parserFactory)
-				LogDebug("process accept for msgque:%d", msgque.id)
 				if r.handler.OnNewMsgQue(msgque) {
 					msgque.init = true
 					Go(func() {
-						LogDebug("process read for msgque:%d", msgque.id)
+						LogInfo("process read for msgque:%d", msgque.id)
 						msgque.read()
-						LogDebug("process read end for msgque:%d", msgque.id)
+						LogInfo("process read end for msgque:%d", msgque.id)
 					})
 					Go(func() {
-						LogDebug("process write for msgque:%d", msgque.id)
+						LogInfo("process write for msgque:%d", msgque.id)
 						msgque.write()
-						LogDebug("process write end for msgque:%d", msgque.id)
+						LogInfo("process write end for msgque:%d", msgque.id)
 					})
 				} else {
 					msgque.Stop()
 				}
-				LogDebug("process accept end for msgque:%d", msgque.id)
 			})
 		}
 	}

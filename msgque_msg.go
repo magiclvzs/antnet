@@ -61,7 +61,7 @@ func (r *MessageHead) FromBytes(data []byte) error {
 }
 
 func (r *MessageHead) CmdAct() int {
-	return int(r.Cmd<<8 + r.Act)
+	return CmdAct(r.Cmd, r.Act)
 }
 
 func (r *MessageHead) String() string {
@@ -85,7 +85,7 @@ type Message struct {
 
 func (r *Message) CmdAct() int {
 	if r.Head != nil {
-		return int(r.Head.Cmd<<8 + r.Head.Act)
+		return CmdAct(r.Head.Cmd, r.Head.Act)
 	}
 	return 0
 }

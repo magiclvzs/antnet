@@ -19,6 +19,7 @@ func SetErrorId(err error, id uint16) {
 }
 
 var (
+	ErrOk            = NewError("正确", 0)
 	ErrDBErr         = NewError("数据库错误", 1)
 	ErrProtoPack     = NewError("协议解析错误", 2)
 	ErrProtoUnPack   = NewError("协议打包错误", 3)

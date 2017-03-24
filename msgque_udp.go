@@ -283,17 +283,17 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 	msgqueMapSync.Unlock()
 
 	Go(func() {
-		LogDebug("process read for msgque:%d", msgque.id)
+		LogInfo("process read for msgque:%d", msgque.id)
 		msgque.read()
-		LogDebug("process read end for msgque:%d", msgque.id)
+		LogInfo("process read end for msgque:%d", msgque.id)
 	})
 	Go(func() {
-		LogDebug("process write for msgque:%d", msgque.id)
+		LogInfo("process write for msgque:%d", msgque.id)
 		msgque.write()
-		LogDebug("process write end for msgque:%d", msgque.id)
+		LogInfo("process write end for msgque:%d", msgque.id)
 	})
 
-	LogDebug("new msgque id:%d from addr:%s", msgque.id, addr.String())
+	LogInfo("new msgque id:%d from addr:%s", msgque.id, addr.String())
 	return &msgque
 }
 

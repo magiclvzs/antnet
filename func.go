@@ -83,7 +83,7 @@ func Now() time.Time {
 }
 
 func CmdAct(cmd, act uint8) int {
-	return int(cmd<<8 + act)
+	return int(cmd)<<8 + int(act)
 }
 
 func MD5Str(s string) string {
