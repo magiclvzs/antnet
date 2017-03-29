@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -12,21 +13,43 @@ type tcpMsgQue struct {
 	msgQue
 	conn     net.Conn     //连接
 	listener net.Listener //监听
+	network  string
+	address  string
+	wait     sync.WaitGroup
 }
 
+func (r *tcpMsgQue) GetNetType() NetType {
+	return NetTypeTcp
+}
 func (r *tcpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
+		if r.init {
+			r.handler.OnDelMsgQue(r)
+			if r.connTyp == ConnTypeConn {
+				if r.stop == 0 { //处理重连
+					return
+				}
+				if !atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
+					return
+				}
+			}
+		}
+
 		if r.cwrite != nil {
 			close(r.cwrite)
 		}
+
 		if r.listener != nil {
 			if tcp, ok := r.listener.(*net.TCPListener); ok {
 				tcp.Close()
 			}
 		}
-		if r.init {
-			r.handler.OnDelMsgQue(r)
+
+		for k, v := range r.callback {
+			v <- nil
+			delete(r.callback, k)
 		}
+
 		LogInfo("msgque close id:%d", r.id)
 
 		msgqueMapSync.Lock()
@@ -79,7 +102,7 @@ func (r *tcpMsgQue) readMsg() {
 
 			if head.Len == 0 {
 				msg := &Message{Head: head}
-				f := r.handler.GetHandlerFunc(msg)
+				f := r.handler.GetHandlerFunc(r, msg)
 				if f == nil {
 					f = r.handler.OnProcessMsg
 				}
@@ -111,7 +134,7 @@ func (r *tcpMsgQue) readMsg() {
 					}
 				}
 			}
-			f := r.handler.GetHandlerFunc(msg)
+			f := r.handler.GetHandlerFunc(r, msg)
 			if f == nil {
 				f = r.handler.OnProcessMsg
 			}
@@ -170,7 +193,7 @@ func (r *tcpMsgQue) writeMsg() {
 
 func (r *tcpMsgQue) Send(m *Message) (re bool) {
 	if m == nil {
-		return
+		return false
 	}
 	defer func() {
 		if err := recover(); err != nil {
@@ -181,6 +204,14 @@ func (r *tcpMsgQue) Send(m *Message) (re bool) {
 	re = true
 	r.cwrite <- m
 	return
+}
+
+func (r *tcpMsgQue) SendCallback(m *Message, c chan interface{}) {
+	if r.Send(m) {
+		r.SetCallback(m.Tag(), c)
+	} else {
+		c <- nil
+	}
 }
 
 func (r *tcpMsgQue) SendString(str string) (re bool) {
@@ -231,7 +262,7 @@ func (r *tcpMsgQue) readCmd() {
 				}
 			}
 		}
-		f := r.handler.GetHandlerFunc(msg)
+		f := r.handler.GetHandlerFunc(r, msg)
 		if f == nil {
 			f = r.handler.OnProcessMsg
 		}
@@ -269,6 +300,7 @@ func (r *tcpMsgQue) writeCmd() {
 
 func (r *tcpMsgQue) read() {
 	defer func() {
+		r.wait.Done()
 		if err := recover(); err != nil {
 			LogError("msgque read panic id:%v err:%v", r.id, err.(error))
 			LogStack()
@@ -276,6 +308,7 @@ func (r *tcpMsgQue) read() {
 		r.Stop()
 	}()
 
+	r.wait.Add(1)
 	if r.msgTyp == MsgTypeCmd {
 		r.readCmd()
 	} else {
@@ -285,15 +318,16 @@ func (r *tcpMsgQue) read() {
 
 func (r *tcpMsgQue) write() {
 	defer func() {
+		r.wait.Done()
 		if err := recover(); err != nil {
 			LogError("msgque write panic id:%v err:%v", r.id, err.(error))
-			r.Stop()
 		}
-
 		if r.conn != nil {
 			r.conn.Close()
 		}
+		r.Stop()
 	}()
+	r.wait.Add(1)
 	if r.msgTyp == MsgTypeCmd {
 		r.writeCmd()
 	} else {
@@ -331,7 +365,58 @@ func (r *tcpMsgQue) listen() {
 	r.Stop()
 }
 
-func newTcpConn(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
+func (r *tcpMsgQue) Reconnect(t int) {
+	if IsStop() {
+		return
+	}
+
+	if r.conn != nil {
+		if r.stop == 0 {
+			return
+		}
+		r.conn.Close()
+		if len(r.cwrite) == 0 {
+			r.cwrite <- nil
+		}
+		r.wait.Wait()
+	}
+	if r.init {
+		if t < 1 {
+			t = 1
+		}
+		time.Sleep(time.Second * time.Duration(t))
+	}
+	r.init = true
+	r.stop = 0
+	Go(func() {
+		LogInfo("connect to addr:%s msgque:%d", r.address, r.id)
+		c, err := net.DialTimeout(r.network, r.address, time.Second)
+		if err != nil {
+			LogInfo("connect to addr:%s failed msgque:%d", r.address, r.id)
+			r.handler.OnConnectComplete(r, false)
+			r.Stop()
+		} else {
+			r.conn = c
+			LogInfo("connect to addr:%s ok msgque:%d", r.address, r.id)
+			if r.handler.OnConnectComplete(r, true) {
+				Go(func() {
+					LogInfo("process read for msgque:%d", r.id)
+					r.read()
+					LogInfo("process read end for msgque:%d", r.id)
+				})
+				Go(func() {
+					LogInfo("process write for msgque:%d", r.id)
+					r.write()
+					LogInfo("process write end for msgque:%d", r.id)
+				})
+			} else {
+				r.Stop()
+			}
+		}
+	})
+}
+
+func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgQueId, 1),
@@ -339,10 +424,12 @@ func newTcpConn(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pars
 			msgTyp:        msgtyp,
 			handler:       handler,
 			timeout:       DefMsgQueTimeout,
-			msgqueTyp:     MsgQueTypeConn,
+			connTyp:       ConnTypeConn,
 			parserFactory: parser,
 		},
-		conn: conn,
+		conn:    conn,
+		network: network,
+		address: addr,
 	}
 	if parser != nil {
 		msgque.parser = parser.Get()
@@ -350,7 +437,7 @@ func newTcpConn(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pars
 	msgqueMapSync.Lock()
 	msgqueMap[msgque.id] = &msgque
 	msgqueMapSync.Unlock()
-	LogInfo("new msgque id:%d from addr:%s", msgque.id, conn.RemoteAddr().String())
+	LogInfo("new msgque id:%d connect to addr:%s:%s", msgque.id, network, addr)
 	return &msgque
 }
 
@@ -362,7 +449,7 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pa
 			msgTyp:        msgtyp,
 			handler:       handler,
 			timeout:       DefMsgQueTimeout,
-			msgqueTyp:     MsgQueTypeAccept,
+			connTyp:       ConnTypeAccept,
 			parserFactory: parser,
 		},
 		conn: conn,
@@ -384,7 +471,7 @@ func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, pa
 			msgTyp:        msgtyp,
 			handler:       handler,
 			parserFactory: parser,
-			msgqueTyp:     MsgQueTypeListen,
+			connTyp:       ConnTypeListen,
 		},
 		listener: listener,
 	}

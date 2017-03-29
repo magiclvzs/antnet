@@ -15,6 +15,9 @@ type udpMsgQue struct {
 	lastTick int64
 }
 
+func (r *udpMsgQue) GetNetType() NetType {
+	return NetTypeUdp
+}
 func (r *udpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
 		if r.cwrite != nil {
@@ -28,6 +31,11 @@ func (r *udpMsgQue) Stop() {
 			r.handler.OnDelMsgQue(r)
 		}
 		LogInfo("msgque close id:%d", r.id)
+
+		for k, v := range r.callback {
+			v <- nil
+			delete(r.callback, k)
+		}
 
 		msgqueMapSync.Lock()
 		delete(msgqueMap, r.id)
@@ -46,6 +54,10 @@ func (r *udpMsgQue) IsStop() bool {
 		}
 	}
 	return r.stop == 1
+}
+
+func (r *udpMsgQue) Reconnect(t int) {
+
 }
 
 func (r *udpMsgQue) LocalAddr() string {
@@ -125,7 +137,7 @@ func (r *udpMsgQue) read() {
 				}
 			}
 		}
-		f := r.handler.GetHandlerFunc(msg)
+		f := r.handler.GetHandlerFunc(r, msg)
 		if f == nil {
 			f = r.handler.OnProcessMsg
 		}
@@ -165,6 +177,14 @@ func (r *udpMsgQue) write() {
 				r.conn.WriteToUDP(m.Head.Bytes(), r.addr)
 			}
 		}
+	}
+}
+
+func (r *udpMsgQue) SendCallback(m *Message, c chan interface{}) {
+	if r.Send(m) {
+		r.SetCallback(m.Tag(), c)
+	} else {
+		c <- nil
 	}
 }
 
@@ -267,7 +287,7 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			msgTyp:        msgtyp,
 			handler:       handler,
 			timeout:       DefMsgQueTimeout,
-			msgqueTyp:     MsgQueTypeAccept,
+			connTyp:       ConnTypeAccept,
 			parserFactory: parser,
 		},
 		conn:     conn,
@@ -304,7 +324,7 @@ func newUdpListen(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			msgTyp:        msgtyp,
 			handler:       handler,
 			parserFactory: parser,
-			msgqueTyp:     MsgQueTypeListen,
+			connTyp:       ConnTypeListen,
 		},
 		conn: conn,
 	}

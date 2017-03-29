@@ -4,7 +4,6 @@ import (
 	"net"
 	"reflect"
 	"strings"
-	"time"
 )
 
 var DefMsgQueTimeout int = 180
@@ -16,26 +15,26 @@ const (
 	MsgTypeCmd                //消息没有消息头，以\n分割
 )
 
+type NetType int
+
+const (
+	NetTypeTcp NetType = iota //TCP类型
+	NetTypeUdp                //UDP类型
+)
+
 type ConnType int
 
 const (
-	ConnTypeTcp ConnType = iota //TCP类型
-	ConnTypeUdp                 //UDP类型
-)
-
-type MsgQueType int
-
-const (
-	MsgQueTypeListen MsgQueType = iota //监听
-	MsgQueTypeConn                     //连接
-	MsgQueTypeAccept                   //Accept产生的
+	ConnTypeListen ConnType = iota //监听
+	ConnTypeConn                   //连接产生的
+	ConnTypeAccept                 //Accept产生的
 )
 
 type IMsgQue interface {
 	Id() uint32
 	GetMsgType() MsgType
 	GetConnType() ConnType
-	GetMsgQueType() MsgQueType
+	GetNetType() NetType
 
 	LocalAddr() string
 	RemoteAddr() string
@@ -48,35 +47,60 @@ type IMsgQue interface {
 	SendStringLn(str string) (re bool)
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
+	SendCallback(m *Message, c chan interface{})
 	SetTimeout(t int)
 	GetTimeout() int
+	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
 
 	GetHandler() IMsgHandler
 
 	SetUser(user interface{})
 	User() interface{}
+
+	GetSendCallback(tag int) chan interface{}
 }
 
 type msgQue struct {
 	id uint32 //唯一标示
 
-	cwrite    chan *Message //写入通道
-	stop      int32         //停止标记
-	msgTyp    MsgType       //消息类型
-	msgqueTyp MsgQueType    //通道类型
+	cwrite  chan *Message //写入通道
+	stop    int32         //停止标记
+	msgTyp  MsgType       //消息类型
+	connTyp ConnType      //通道类型
 
 	handler       IMsgHandler //处理者
 	parser        IParser
 	parserFactory *Parser
 	timeout       int //传输超时
 
-	init bool
-
-	user interface{}
+	init     bool
+	callback map[int]chan interface{}
+	user     interface{}
 }
 
 func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
+}
+
+func (r *msgQue) GetSendCallback(tag int) chan interface{} {
+	if r.callback != nil {
+		if c, ok := r.callback[tag]; ok {
+			return c
+		}
+	}
+	return nil
+}
+
+func (r *msgQue) SetCallback(tag int, c chan interface{}) {
+	if r.callback == nil {
+		r.callback = make(map[int]chan interface{})
+	}
+	oc, ok := r.callback[tag]
+	if ok {
+		oc <- nil
+	}
+
+	r.callback[tag] = c
 }
 
 func (r *msgQue) User() interface{} {
@@ -91,8 +115,8 @@ func (r *msgQue) GetMsgType() MsgType {
 	return r.msgTyp
 }
 
-func (r *msgQue) GetMsgQueType() MsgQueType {
-	return r.msgqueTyp
+func (r *msgQue) GetConnType() ConnType {
+	return r.connTyp
 }
 
 func (r *msgQue) Id() uint32 {
@@ -107,18 +131,14 @@ func (r *msgQue) GetTimeout() int {
 	return r.timeout
 }
 
-func (r *msgQue) GetConnType() ConnType {
-	return ConnTypeTcp
-}
-
 type HandlerFunc func(msgque IMsgQue, msg *Message) bool
 
 type IMsgHandler interface {
-	OnNewMsgQue(msgque IMsgQue) bool                //新的消息队列
-	OnDelMsgQue(msgque IMsgQue)                     //消息队列关闭
-	OnProcessMsg(msgque IMsgQue, msg *Message) bool //默认的消息处理函数
-	OnConnectComplete(msgque IMsgQue, ok bool) bool //连接成功
-	GetHandlerFunc(msg *Message) HandlerFunc        //根据消息获得处理函数
+	OnNewMsgQue(msgque IMsgQue) bool                         //新的消息队列
+	OnDelMsgQue(msgque IMsgQue)                              //消息队列关闭
+	OnProcessMsg(msgque IMsgQue, msg *Message) bool          //默认的消息处理函数
+	OnConnectComplete(msgque IMsgQue, ok bool) bool          //连接成功
+	GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc //根据消息获得处理函数
 }
 
 type IMsgRegister interface {
@@ -135,7 +155,14 @@ func (r *DefMsgHandler) OnNewMsgQue(msgque IMsgQue) bool                { return
 func (r *DefMsgHandler) OnDelMsgQue(msgque IMsgQue)                     {}
 func (r *DefMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool { return true }
 func (r *DefMsgHandler) OnConnectComplete(msgque IMsgQue, ok bool) bool { return true }
-func (r *DefMsgHandler) GetHandlerFunc(msg *Message) HandlerFunc {
+func (r *DefMsgHandler) GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc {
+	if msgque.GetConnType() == ConnTypeConn {
+		if c := msgque.GetSendCallback(msg.Tag()); c != nil {
+			c <- msg
+		}
+		return r.OnProcessMsg
+	}
+
 	if msg.CmdAct() == 0 {
 		if r.typeMap != nil {
 			if f, ok := r.typeMap[reflect.TypeOf(msg.C2S())]; ok {
@@ -215,25 +242,12 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 }
 
 func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser) {
-	c, err := net.DialTimeout(netype, addr, time.Second)
-	if err != nil {
-		handler.OnConnectComplete(nil, false)
-	}
-	if c != nil {
-		msgque := newTcpConn(c, typ, handler, parser)
-		LogDebug("process connect for msgque:%d", msgque.id)
-		if handler.OnConnectComplete(msgque, true) && handler.OnNewMsgQue(msgque) {
-			Go(func() {
-				LogDebug("process read for msgque:%d", msgque.id)
-				msgque.read()
-				LogDebug("process read end for msgque:%d", msgque.id)
-			})
-			Go(func() {
-				LogDebug("process write for msgque:%d", msgque.id)
-				msgque.write()
-				LogDebug("process write end for msgque:%d", msgque.id)
-			})
+	Go(func() {
+		msgque := newTcpConn(netype, addr, nil, typ, handler, parser)
+		if handler.OnNewMsgQue(msgque) {
+			msgque.Reconnect(0)
+		} else {
+			msgque.Stop()
 		}
-		LogDebug("process connect end for msgque:%d", msgque.id)
-	}
+	})
 }

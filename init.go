@@ -21,7 +21,8 @@ var stopForLog int32 //
 var stop int32       //停止标志
 
 var gocount int32 //goroutine数量
-var DefLog *Log   //日志
+var goid uint32
+var DefLog *Log //日志
 
 var msgQueId uint32 //消息队列id
 

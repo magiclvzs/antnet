@@ -64,6 +64,10 @@ func (r *MessageHead) CmdAct() int {
 	return CmdAct(r.Cmd, r.Act)
 }
 
+func (r *MessageHead) Tag() int {
+	return Tag(r.Cmd, r.Act, r.Index)
+}
+
 func (r *MessageHead) String() string {
 	return fmt.Sprintf("Len:%v Error:%v Cmd:%v Act:%v Index:%v Flags:%v", r.Len, r.Error, r.Cmd, r.Act, r.Index, r.Flags)
 }
@@ -86,6 +90,13 @@ type Message struct {
 func (r *Message) CmdAct() int {
 	if r.Head != nil {
 		return CmdAct(r.Head.Cmd, r.Head.Act)
+	}
+	return 0
+}
+
+func (r *Message) Tag() int {
+	if r.Head != nil {
+		return Tag(r.Head.Cmd, r.Head.Act, r.Head.Index)
 	}
 	return 0
 }

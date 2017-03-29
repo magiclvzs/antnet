@@ -57,6 +57,7 @@ const (
 	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
 	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
 	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
+	ParserTypeRaw                    //不做任何解析
 )
 
 type ParseErrType int
@@ -100,6 +101,8 @@ func (r *Parser) Get() IParser {
 		}
 	case ParserTypeCmd:
 		return &cmdParser{factory: r}
+	case ParserTypeRaw:
+		return nil
 	}
 
 	return r.parser

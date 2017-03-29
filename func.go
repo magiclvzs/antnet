@@ -86,6 +86,10 @@ func CmdAct(cmd, act uint8) int {
 	return int(cmd)<<8 + int(act)
 }
 
+func Tag(cmd, act uint8, index uint16) int {
+	return int(cmd)<<16 + int(act)<<8 + int(index)
+}
+
 func MD5Str(s string) string {
 	md5Ctx := md5.New()
 	md5Ctx.Write([]byte(s))
@@ -96,13 +100,14 @@ func MD5Str(s string) string {
 func Go(fn func()) {
 	waitAll.Add(1)
 	var debugStr string
+	id := atomic.AddUint32(&goid, 1)
 	c := atomic.AddInt32(&gocount, 1)
 	if DefLog.Level() <= LogLevelDebug {
 		_, file, line, _ := runtime.Caller(1)
 		i := strings.LastIndex(file, "/") + 1
 		i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
 		debugStr = Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
-		LogDebug("goroutine count:%d from:%s", c, debugStr)
+		LogDebug("goroutine start id:%d count:%d from:%s", id, id, debugStr)
 	}
 	go func() {
 		fn()
@@ -110,18 +115,31 @@ func Go(fn func()) {
 		c = atomic.AddInt32(&gocount, ^int32(0))
 
 		if DefLog.Level() <= LogLevelDebug {
-			LogDebug("goroutine count:%d from:%s", c, debugStr)
+			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
 	}()
 }
 
 func GoArgs(fn func(...interface{}), args ...interface{}) {
 	waitAll.Add(1)
-	LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, 1))
+	var debugStr string
+	id := atomic.AddUint32(&goid, 1)
+	c := atomic.AddInt32(&gocount, 1)
+	if DefLog.Level() <= LogLevelDebug {
+		_, file, line, _ := runtime.Caller(1)
+		i := strings.LastIndex(file, "/") + 1
+		i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
+		debugStr = Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
+		LogDebug("goroutine start id:%d count:%d from:%s", id, id, debugStr)
+	}
+
 	go func() {
 		fn(args...)
 		waitAll.Done()
-		LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, ^int32(0)))
+		c = atomic.AddInt32(&gocount, ^int32(0))
+		if DefLog.Level() <= LogLevelDebug {
+			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
+		}
 	}()
 }
 
@@ -130,7 +148,17 @@ func Go2(fn func(cstop chan struct{})) bool {
 		return false
 	}
 	waitAll.Add(1)
-	LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, 1))
+	var debugStr string
+	id := atomic.AddUint32(&goid, 1)
+	c := atomic.AddInt32(&gocount, 1)
+	if DefLog.Level() <= LogLevelDebug {
+		_, file, line, _ := runtime.Caller(1)
+		i := strings.LastIndex(file, "/") + 1
+		i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
+		debugStr = Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
+		LogDebug("goroutine start id:%d count:%d from:%s", id, id, debugStr)
+	}
+
 	go func() {
 		id := atomic.AddUint64(&goId, 1)
 		cstop := make(chan struct{})
@@ -147,7 +175,10 @@ func Go2(fn func(cstop chan struct{})) bool {
 		stopMapLock.Unlock()
 
 		waitAll.Done()
-		LogDebug("goroutine count:%d", atomic.AddInt32(&gocount, ^int32(0)))
+		c = atomic.AddInt32(&gocount, ^int32(0))
+		if DefLog.Level() <= LogLevelDebug {
+			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
+		}
 	}()
 	return true
 }
