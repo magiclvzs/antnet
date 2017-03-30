@@ -193,7 +193,7 @@ func (r *tcpMsgQue) writeMsg() {
 
 func (r *tcpMsgQue) Send(m *Message) (re bool) {
 	if m == nil {
-		return false
+		return
 	}
 	defer func() {
 		if err := recover(); err != nil {
@@ -416,7 +416,7 @@ func (r *tcpMsgQue) Reconnect(t int) {
 	})
 }
 
-func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
+func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser, user interface{}) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgQueId, 1),
@@ -426,6 +426,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeConn,
 			parserFactory: parser,
+			user:          user,
 		},
 		conn:    conn,
 		network: network,

@@ -241,13 +241,11 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 	return nil
 }
 
-func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser) {
-	Go(func() {
-		msgque := newTcpConn(netype, addr, nil, typ, handler, parser)
-		if handler.OnNewMsgQue(msgque) {
-			msgque.Reconnect(0)
-		} else {
-			msgque.Stop()
-		}
-	})
+func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser, user interface{}) {
+	msgque := newTcpConn(netype, addr, nil, typ, handler, parser, user)
+	if handler.OnNewMsgQue(msgque) {
+		msgque.Reconnect(0)
+	} else {
+		msgque.Stop()
+	}
 }
