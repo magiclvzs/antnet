@@ -20,30 +20,19 @@ func (r *udpMsgQue) GetNetType() NetType {
 }
 func (r *udpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
-		if r.cwrite != nil {
-			close(r.cwrite)
+		if r.init {
+			r.handler.OnDelMsgQue(r)
 		}
+
 		if r.cread != nil {
 			close(r.cread)
 		}
 
-		if r.init {
-			r.handler.OnDelMsgQue(r)
-		}
-		LogInfo("msgque close id:%d", r.id)
-
-		for k, v := range r.callback {
-			v <- nil
-			delete(r.callback, k)
-		}
-
-		msgqueMapSync.Lock()
-		delete(msgqueMap, r.id)
-		msgqueMapSync.Unlock()
-
 		udpMapLock.Lock()
 		delete(udpMap, r.addr.String())
 		udpMapLock.Unlock()
+
+		r.BaseStop()
 	}
 }
 
@@ -54,10 +43,6 @@ func (r *udpMsgQue) IsStop() bool {
 		}
 	}
 	return r.stop == 1
-}
-
-func (r *udpMsgQue) Reconnect(t int) {
-
 }
 
 func (r *udpMsgQue) LocalAddr() string {
@@ -122,26 +107,7 @@ func (r *udpMsgQue) read() {
 			r.init = true
 		}
 
-		if r.parser != nil {
-			mp, err := r.parser.ParseC2S(msg)
-			if err == nil {
-				msg.IMsgParser = mp
-			} else {
-				if r.parser.GetErrType() == ParseErrTypeSendRemind {
-					r.Send(r.parser.GetRemindMsg(err, r.msgTyp))
-					continue
-				} else if r.parser.GetErrType() == ParseErrTypeClose {
-					break
-				} else if r.parser.GetErrType() == ParseErrTypeContinue {
-					continue
-				}
-			}
-		}
-		f := r.handler.GetHandlerFunc(r, msg)
-		if f == nil {
-			f = r.handler.OnProcessMsg
-		}
-		if !f(r, msg) {
+		if !r.processMsg(r, msg) {
 			break
 		}
 	}
@@ -180,29 +146,6 @@ func (r *udpMsgQue) write() {
 	}
 }
 
-func (r *udpMsgQue) SendCallback(m *Message, c chan interface{}) {
-	if r.Send(m) {
-		r.SetCallback(m.Tag(), c)
-	} else {
-		c <- nil
-	}
-}
-
-func (r *udpMsgQue) Send(m *Message) (re bool) {
-	if m == nil {
-		return
-	}
-	defer func() {
-		if err := recover(); err != nil {
-			re = false
-		}
-	}()
-
-	re = true
-	r.cwrite <- m
-	return
-}
-
 func (r *udpMsgQue) sendRead(data []byte, n int) (re bool) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -217,30 +160,6 @@ func (r *udpMsgQue) sendRead(data []byte, n int) (re bool) {
 		r.cread <- pdata
 	}
 	return
-}
-
-func (r *udpMsgQue) SendString(str string) (re bool) {
-	defer func() {
-		if err := recover(); err != nil {
-			re = false
-		}
-	}()
-
-	re = true
-	r.cwrite <- &Message{Data: []byte(str)}
-	return
-}
-
-func (r *udpMsgQue) SendStringLn(str string) (re bool) {
-	return r.SendString(str + "\n")
-}
-
-func (r *udpMsgQue) SendByteStr(str []byte) (re bool) {
-	return r.SendString(string(str))
-}
-
-func (r *udpMsgQue) SendByteStrLn(str []byte) (re bool) {
-	return r.SendString(string(str) + "\n")
 }
 
 var udpMap map[string]*udpMsgQue = map[string]*udpMsgQue{}

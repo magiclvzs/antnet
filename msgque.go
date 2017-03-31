@@ -4,6 +4,7 @@ import (
 	"net"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 var DefMsgQueTimeout int = 180
@@ -47,7 +48,7 @@ type IMsgQue interface {
 	SendStringLn(str string) (re bool)
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
-	SendCallback(m *Message, c chan interface{})
+	SendCallback(m *Message, c chan interface{}) (re bool)
 	SetTimeout(t int)
 	GetTimeout() int
 	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
@@ -55,9 +56,9 @@ type IMsgQue interface {
 	GetHandler() IMsgHandler
 
 	SetUser(user interface{})
-	User() interface{}
+	GetUser() interface{}
 
-	GetSendCallback(tag int) chan interface{}
+	tryCallback(msg *Message) (re bool)
 }
 
 type msgQue struct {
@@ -73,37 +74,17 @@ type msgQue struct {
 	parserFactory *Parser
 	timeout       int //传输超时
 
-	init     bool
-	callback map[int]chan interface{}
-	user     interface{}
+	init         bool
+	callback     map[int]chan interface{}
+	user         interface{}
+	callbackLock sync.Mutex
 }
 
 func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
 }
 
-func (r *msgQue) GetSendCallback(tag int) chan interface{} {
-	if r.callback != nil {
-		if c, ok := r.callback[tag]; ok {
-			return c
-		}
-	}
-	return nil
-}
-
-func (r *msgQue) SetCallback(tag int, c chan interface{}) {
-	if r.callback == nil {
-		r.callback = make(map[int]chan interface{})
-	}
-	oc, ok := r.callback[tag]
-	if ok {
-		oc <- nil
-	}
-
-	r.callback[tag] = c
-}
-
-func (r *msgQue) User() interface{} {
+func (r *msgQue) GetUser() interface{} {
 	return r.user
 }
 
@@ -129,6 +110,128 @@ func (r *msgQue) SetTimeout(t int) {
 
 func (r *msgQue) GetTimeout() int {
 	return r.timeout
+}
+func (r *msgQue) Reconnect(t int) {
+
+}
+
+func (r *msgQue) Send(m *Message) (re bool) {
+	if m == nil {
+		return
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			re = false
+		}
+	}()
+
+	r.cwrite <- m
+	return true
+}
+
+func (r *msgQue) SendCallback(m *Message, c chan interface{}) (re bool) {
+	if c == nil || len(c) < 1 {
+		return
+	}
+	if r.Send(m) {
+		r.setCallback(m.Tag(), c)
+	} else {
+		c <- nil
+		return
+	}
+	return true
+}
+
+func (r *msgQue) SendString(str string) (re bool) {
+	return r.Send(&Message{Data: []byte(str)})
+}
+
+func (r *msgQue) SendStringLn(str string) (re bool) {
+	return r.SendString(str + "\n")
+}
+
+func (r *msgQue) SendByteStr(str []byte) (re bool) {
+	return r.SendString(string(str))
+}
+
+func (r *msgQue) SendByteStrLn(str []byte) (re bool) {
+	return r.SendString(string(str) + "\n")
+}
+
+func (r *msgQue) tryCallback(msg *Message) (re bool) {
+	defer func() {
+		if err := recover(); err != nil {
+
+		}
+		r.callbackLock.Unlock()
+	}()
+	r.callbackLock.Lock()
+	if r.callback != nil {
+		tag := msg.Tag()
+		if c, ok := r.callback[tag]; ok {
+			delete(r.callback, tag)
+			c <- msg
+			return true
+		}
+	}
+	return
+}
+
+func (r *msgQue) setCallback(tag int, c chan interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+
+		}
+		r.callback[tag] = c
+		r.callbackLock.Unlock()
+	}()
+
+	r.callbackLock.Lock()
+	if r.callback == nil {
+		r.callback = make(map[int]chan interface{})
+	}
+	oc, ok := r.callback[tag]
+	if ok { //可能已经关闭
+		oc <- nil
+	}
+}
+
+func (r *msgQue) BaseStop() {
+	LogInfo("msgque close id:%d", r.id)
+	if r.cwrite != nil {
+		close(r.cwrite)
+	}
+
+	for k, v := range r.callback {
+		v <- nil
+		delete(r.callback, k)
+	}
+	msgqueMapSync.Lock()
+	delete(msgqueMap, r.id)
+	msgqueMapSync.Unlock()
+}
+
+func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
+	if r.parser != nil && msg.Data != nil {
+		mp, err := r.parser.ParseC2S(msg)
+		if err == nil {
+			msg.IMsgParser = mp
+		} else {
+			if r.parser.GetErrType() == ParseErrTypeSendRemind {
+				r.Send(r.parser.GetRemindMsg(err, r.msgTyp))
+				return true
+			} else if r.parser.GetErrType() == ParseErrTypeClose {
+				return false
+			} else if r.parser.GetErrType() == ParseErrTypeContinue {
+				return true
+			}
+		}
+	}
+	f := r.handler.GetHandlerFunc(msgque, msg)
+	if f == nil {
+		f = r.handler.OnProcessMsg
+	}
+	return f(msgque, msg)
 }
 
 type HandlerFunc func(msgque IMsgQue, msg *Message) bool
@@ -157,9 +260,7 @@ func (r *DefMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool { return
 func (r *DefMsgHandler) OnConnectComplete(msgque IMsgQue, ok bool) bool { return true }
 func (r *DefMsgHandler) GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc {
 	if msgque.GetConnType() == ConnTypeConn {
-		if c := msgque.GetSendCallback(msg.Tag()); c != nil {
-			c <- msg
-		}
+		msgque.tryCallback(msg)
 		return r.OnProcessMsg
 	}
 
@@ -208,13 +309,15 @@ func (r *EchoMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool {
 
 func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) error {
 	addrs := strings.Split(addr, "://")
-	if addrs[0] == "udp" {
-		naddr, err := net.ResolveUDPAddr(addrs[0], addrs[1])
+	if addrs[0] == "udp" || addrs[0] == "all" {
+		naddr, err := net.ResolveUDPAddr("udp", addrs[1])
 		if err != nil {
+			LogError("listen on %s failed, errstr:%s", addr, err)
 			return err
 		}
-		conn, err := net.ListenUDP(addrs[0], naddr)
+		conn, err := net.ListenUDP("udp", naddr)
 		if err != nil {
+			LogError("listen on %s failed, errstr:%s", addr, err)
 			return err
 		}
 		msgque := newUdpListen(conn, typ, handler, parser, addr)
@@ -223,9 +326,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 			msgque.listen()
 			LogDebug("process listen end for msgque:%d", msgque.id)
 		})
-
-	} else {
-		listen, err := net.Listen(addrs[0], addrs[1])
+	}
+	if addrs[0] == "tcp" || addrs[0] == "all" {
+		listen, err := net.Listen("tcp", addrs[1])
 		if err == nil {
 			msgque := newTcpListen(listen, typ, handler, parser, addr)
 			Go(func() {
@@ -234,7 +337,7 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 				LogDebug("process listen end for msgque:%d", msgque.id)
 			})
 		} else {
-			LogError(err)
+			LogError("listen on %s failed, errstr:%s", addr, err)
 		}
 		return err
 	}

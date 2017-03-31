@@ -35,26 +35,13 @@ func (r *tcpMsgQue) Stop() {
 			}
 		}
 
-		if r.cwrite != nil {
-			close(r.cwrite)
-		}
-
 		if r.listener != nil {
 			if tcp, ok := r.listener.(*net.TCPListener); ok {
 				tcp.Close()
 			}
 		}
 
-		for k, v := range r.callback {
-			v <- nil
-			delete(r.callback, k)
-		}
-
-		LogInfo("msgque close id:%d", r.id)
-
-		msgqueMapSync.Lock()
-		delete(msgqueMap, r.id)
-		msgqueMapSync.Unlock()
+		r.BaseStop()
 	}
 }
 
@@ -101,12 +88,7 @@ func (r *tcpMsgQue) readMsg() {
 			}
 
 			if head.Len == 0 {
-				msg := &Message{Head: head}
-				f := r.handler.GetHandlerFunc(r, msg)
-				if f == nil {
-					f = r.handler.OnProcessMsg
-				}
-				if !f(r, msg) {
+				if !r.processMsg(r, &Message{Head: head}) {
 					break
 				}
 				head = nil
@@ -118,27 +100,7 @@ func (r *tcpMsgQue) readMsg() {
 			if err != nil {
 				break
 			}
-			msg := &Message{Head: head, Data: data}
-			if r.parser != nil {
-				mp, err := r.parser.ParseC2S(msg)
-				if err == nil {
-					msg.IMsgParser = mp
-				} else {
-					if r.parser.GetErrType() == ParseErrTypeSendRemind {
-						r.Send(r.parser.GetRemindMsg(err, r.msgTyp).CopyTag(msg))
-						continue
-					} else if r.parser.GetErrType() == ParseErrTypeClose {
-						break
-					} else if r.parser.GetErrType() == ParseErrTypeContinue {
-						continue
-					}
-				}
-			}
-			f := r.handler.GetHandlerFunc(r, msg)
-			if f == nil {
-				f = r.handler.OnProcessMsg
-			}
-			if !f(r, msg) {
+			if !r.processMsg(r, &Message{Head: head, Data: data}) {
 				break
 			}
 
@@ -191,53 +153,6 @@ func (r *tcpMsgQue) writeMsg() {
 	}
 }
 
-func (r *tcpMsgQue) Send(m *Message) (re bool) {
-	if m == nil {
-		return
-	}
-	defer func() {
-		if err := recover(); err != nil {
-			re = false
-		}
-	}()
-
-	re = true
-	r.cwrite <- m
-	return
-}
-
-func (r *tcpMsgQue) SendCallback(m *Message, c chan interface{}) {
-	if r.Send(m) {
-		r.SetCallback(m.Tag(), c)
-	} else {
-		c <- nil
-	}
-}
-
-func (r *tcpMsgQue) SendString(str string) (re bool) {
-	defer func() {
-		if err := recover(); err != nil {
-			re = false
-		}
-	}()
-
-	re = true
-	r.cwrite <- &Message{Data: []byte(str)}
-	return
-}
-
-func (r *tcpMsgQue) SendStringLn(str string) (re bool) {
-	return r.SendString(str + "\n")
-}
-
-func (r *tcpMsgQue) SendByteStr(str []byte) (re bool) {
-	return r.SendString(string(str))
-}
-
-func (r *tcpMsgQue) SendByteStrLn(str []byte) (re bool) {
-	return r.SendString(string(str) + "\n")
-}
-
 func (r *tcpMsgQue) readCmd() {
 	reader := bufio.NewReader(r.conn)
 	for !r.IsStop() {
@@ -246,27 +161,7 @@ func (r *tcpMsgQue) readCmd() {
 		if err != nil {
 			break
 		}
-		msg := &Message{Data: data}
-		if r.parser != nil {
-			mp, err := r.parser.ParseC2S(msg)
-			if err == nil {
-				msg.IMsgParser = mp
-			} else {
-				if r.parser.GetErrType() == ParseErrTypeSendRemind {
-					r.Send(r.parser.GetRemindMsg(err, r.msgTyp))
-					continue
-				} else if r.parser.GetErrType() == ParseErrTypeClose {
-					break
-				} else if r.parser.GetErrType() == ParseErrTypeContinue {
-					continue
-				}
-			}
-		}
-		f := r.handler.GetHandlerFunc(r, msg)
-		if f == nil {
-			f = r.handler.OnProcessMsg
-		}
-		if !f(r, msg) {
+		if !r.processMsg(r, &Message{Data: data}) {
 			break
 		}
 	}
