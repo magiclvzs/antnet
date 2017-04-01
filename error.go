@@ -1,21 +1,22 @@
 package antnet
 
-import (
-	"errors"
-)
+type Error struct {
+	Id  uint16
+	Str string
+}
+
+func (r *Error) Error() string {
+	return r.Str
+}
 
 var idErrMap = map[uint16]error{}
 var errIdMap = map[error]uint16{}
 
-func NewError(str string, id uint16) error {
-	e := errors.New(str)
-	SetErrorId(e, id)
-	return e
-}
-
-func SetErrorId(err error, id uint16) {
+func NewError(str string, id uint16) *Error {
+	err := &Error{id, str}
 	idErrMap[id] = err
 	errIdMap[err] = id
+	return err
 }
 
 var (
