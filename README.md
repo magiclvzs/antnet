@@ -67,7 +67,7 @@ const (
 ```
 
 ## 解析器
-antnet目前有三种解析器类型：  
+antnet目前有四种解析器类型：  
 ```
 type ParserType int
 
@@ -80,13 +80,13 @@ const (
 这三种类型的解析器，都可以用antnet.Parser来创建。    
 每个解析器需要一个Type字段和一个ErrType字段定义，Type字段表示了消息解析器的类型，而ErrType字段则决定了消息解析失败之后默认的行为,ErrType目前有4中方式：    
 ```
-type ParseErrType int
+type ParserType int
 
 const (
-	ParseErrTypeSendRemind ParseErrType = iota //消息解析失败发送提醒消息
-	ParseErrTypeContinue                       //消息解析失败则跳过本条消息
-	ParseErrTypeAlways                         //消息解析失败依然处理
-	ParseErrTypeClose                          //消息解析失败则关闭连接
+	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
+	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
+	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
+	ParserTypeRaw                    //不做任何解析
 )
 ```
 
@@ -137,11 +137,11 @@ protobuf解析器用于解析pb类型的数据
 处理器用于处理消息，一个处理器应该实现IMsgHandler消息接口：
 ```
 type IMsgHandler interface {
-	OnNewMsgQue(msgque IMsgQue) bool                //新的消息队列
-	OnDelMsgQueue(msgque IMsgQue)                   //消息队列关闭
-	OnProcessMsg(msgque IMsgQue, msg *Message) bool //默认的消息处理函数
-	OnConnectComplete(msgque IMsgQue, ok bool) bool //连接成功
-	GetHandlerFunc(msg *Message) HandlerFunc        //根据消息获得处理函数
+	OnNewMsgQue(msgque IMsgQue) bool                         //新的消息队列
+	OnDelMsgQue(msgque IMsgQue)                              //消息队列关闭
+	OnProcessMsg(msgque IMsgQue, msg *Message) bool          //默认的消息处理函数
+	OnConnectComplete(msgque IMsgQue, ok bool) bool          //连接成功
+	GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc //根据消息获得处理函数
 }
 ```
 
