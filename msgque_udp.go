@@ -32,6 +32,9 @@ func (r *udpMsgQue) Stop() {
 		delete(udpMap, r.addr.String())
 		udpMapLock.Unlock()
 
+		if IsStop() && len(udpMap) == 0 && r.conn != nil {
+			r.conn.Close()
+		}
 		r.BaseStop()
 	}
 }
@@ -95,7 +98,7 @@ func (r *udpMsgQue) read() {
 			if !r.handler.OnNewMsgQue(r) {
 				break
 			}
-			SetTimeout(r.addr.String(), r.timeout*1000, func(args ...interface{}) uint32 {
+			SetTimeout(r.timeout*1000, func(args ...interface{}) uint32 {
 				left := int(NowTick - r.lastTick)
 				if left >= r.timeout*1000 {
 					r.Stop()
@@ -169,7 +172,6 @@ func (r *udpMsgQue) listen() {
 	data := make([]byte, 1<<22)
 	for !r.IsStop() {
 		n, addr, err := r.conn.ReadFromUDP(data)
-
 		if err != nil {
 			if err.(net.Error).Timeout() {
 				continue

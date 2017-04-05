@@ -274,8 +274,34 @@ func Atoi(str string) int {
 	return i
 }
 
-func Itoa(num int) string {
-	return strconv.Itoa(num)
+func Itoa(num interface{}) string {
+	switch n := num.(type) {
+	case int8:
+		return strconv.FormatInt(int64(n), 0)
+	case int16:
+		return strconv.FormatInt(int64(n), 0)
+	case int32:
+		return strconv.FormatInt(int64(n), 0)
+	case int:
+		return strconv.FormatInt(int64(n), 0)
+	case int64:
+		return strconv.FormatInt(int64(n), 0)
+	case uint8:
+		return strconv.FormatUint(uint64(n), 0)
+	case uint16:
+		return strconv.FormatUint(uint64(n), 0)
+	case uint32:
+		return strconv.FormatUint(uint64(n), 0)
+	case uint:
+		return strconv.FormatUint(uint64(n), 0)
+	case uint64:
+		return strconv.FormatUint(uint64(n), 0)
+	}
+	return ""
+}
+
+func JoinStr(a []string, sep string) string {
+	return strings.Join(a, sep)
 }
 
 func GetSelfIp(ifnames ...string) (ips []string) {

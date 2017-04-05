@@ -11,11 +11,12 @@ import (
 
 type tcpMsgQue struct {
 	msgQue
-	conn     net.Conn     //连接
-	listener net.Listener //监听
-	network  string
-	address  string
-	wait     sync.WaitGroup
+	conn      net.Conn     //连接
+	listener  net.Listener //监听
+	network   string
+	address   string
+	available bool
+	wait      sync.WaitGroup
 }
 
 func (r *tcpMsgQue) GetNetType() NetType {
@@ -23,13 +24,11 @@ func (r *tcpMsgQue) GetNetType() NetType {
 }
 func (r *tcpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
+		r.available = false
 		if r.init {
 			r.handler.OnDelMsgQue(r)
 			if r.connTyp == ConnTypeConn {
 				if r.stop == 0 { //处理重连
-					return
-				}
-				if !atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
 					return
 				}
 			}
@@ -43,6 +42,10 @@ func (r *tcpMsgQue) Stop() {
 
 		r.BaseStop()
 	}
+}
+
+func (r *tcpMsgQue) Available() bool {
+	return r.available
 }
 
 func (r *tcpMsgQue) IsStop() bool {
@@ -76,7 +79,9 @@ func (r *tcpMsgQue) readMsg() {
 	var head *MessageHead
 
 	for !r.IsStop() {
-		r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+		if r.timeout > 0 {
+			r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+		}
 		if head == nil {
 			_, err := io.ReadFull(r.conn, headData)
 			if err != nil {
@@ -124,7 +129,9 @@ func (r *tcpMsgQue) writeMsg() {
 			}
 		}
 		if m != nil {
-			r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+			if r.timeout > 0 {
+				r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+			}
 			if writeCount < MsgHeadSize {
 				n, err := r.conn.Write(head[writeCount:])
 				if err != nil {
@@ -156,7 +163,9 @@ func (r *tcpMsgQue) writeMsg() {
 func (r *tcpMsgQue) readCmd() {
 	reader := bufio.NewReader(r.conn)
 	for !r.IsStop() {
-		r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+		if r.timeout > 0 {
+			r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+		}
 		data, err := reader.ReadBytes('\n')
 		if err != nil {
 			break
@@ -177,7 +186,9 @@ func (r *tcpMsgQue) writeCmd() {
 			}
 		}
 		if m != nil {
-			r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+			if r.timeout > 0 {
+				r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
+			}
 			n, err := r.conn.Write(m.Data[writeCount:])
 			if err != nil {
 				LogError("msgque write id:%v err:%v", r.id, err)
@@ -240,6 +251,7 @@ func (r *tcpMsgQue) listen() {
 				msgque := newTcpAccept(c, r.msgTyp, r.handler, r.parserFactory)
 				if r.handler.OnNewMsgQue(msgque) {
 					msgque.init = true
+					msgque.available = true
 					Go(func() {
 						LogInfo("process read for msgque:%d", msgque.id)
 						msgque.read()
@@ -260,11 +272,38 @@ func (r *tcpMsgQue) listen() {
 	r.Stop()
 }
 
+func (r *tcpMsgQue) connect() {
+	LogInfo("connect to addr:%s msgque:%d", r.address, r.id)
+	c, err := net.DialTimeout(r.network, r.address, time.Second)
+	if err != nil {
+		LogInfo("connect to addr:%s failed msgque:%d", r.address, r.id)
+		r.handler.OnConnectComplete(r, false)
+		r.Stop()
+	} else {
+		r.conn = c
+		LogInfo("connect to addr:%s ok msgque:%d", r.address, r.id)
+		if r.handler.OnConnectComplete(r, true) {
+			r.available = true
+			Go(func() {
+				LogInfo("process read for msgque:%d", r.id)
+				r.read()
+				LogInfo("process read end for msgque:%d", r.id)
+			})
+			Go(func() {
+				LogInfo("process write for msgque:%d", r.id)
+				r.write()
+				LogInfo("process write end for msgque:%d", r.id)
+			})
+		} else {
+			r.Stop()
+		}
+	}
+}
+
 func (r *tcpMsgQue) Reconnect(t int) {
 	if IsStop() {
 		return
 	}
-
 	if r.conn != nil {
 		if r.stop == 0 {
 			return
@@ -279,36 +318,19 @@ func (r *tcpMsgQue) Reconnect(t int) {
 		if t < 1 {
 			t = 1
 		}
-		time.Sleep(time.Second * time.Duration(t))
 	}
 	r.init = true
 	r.stop = 0
-	Go(func() {
-		LogInfo("connect to addr:%s msgque:%d", r.address, r.id)
-		c, err := net.DialTimeout(r.network, r.address, time.Second)
-		if err != nil {
-			LogInfo("connect to addr:%s failed msgque:%d", r.address, r.id)
-			r.handler.OnConnectComplete(r, false)
-			r.Stop()
-		} else {
-			r.conn = c
-			LogInfo("connect to addr:%s ok msgque:%d", r.address, r.id)
-			if r.handler.OnConnectComplete(r, true) {
-				Go(func() {
-					LogInfo("process read for msgque:%d", r.id)
-					r.read()
-					LogInfo("process read end for msgque:%d", r.id)
-				})
-				Go(func() {
-					LogInfo("process write for msgque:%d", r.id)
-					r.write()
-					LogInfo("process write end for msgque:%d", r.id)
-				})
-			} else {
-				r.Stop()
-			}
-		}
-	})
+	if t > 0 {
+		SetTimeout(t*1000, func(arg ...interface{}) uint32 {
+			r.connect()
+			return 0
+		})
+	} else {
+		Go(func() {
+			r.connect()
+		})
+	}
 }
 
 func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser, user interface{}) *tcpMsgQue {

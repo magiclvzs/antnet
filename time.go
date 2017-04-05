@@ -2,7 +2,6 @@ package antnet
 
 import (
 	"container/list"
-
 	"sync"
 	"time"
 )
@@ -44,24 +43,26 @@ var newest [wheelCnt]uint32
 var timewheels [5][]*list.List
 var timewheelsLock sync.Mutex
 
-var timerMap map[string]*timeNode = make(map[string]*timeNode)
+var timerMap map[uint32]*timeNode = make(map[uint32]*timeNode)
 var timerMapLock sync.Mutex
+var timerIndex uint32 = 0
 
 type timeNode struct {
-	Name     string
+	Id       uint32
 	Inteval  uint32
 	Callback func(...interface{}) uint32
 	Args     []interface{}
 }
 
-func SetTimeout(name string, inteval int, handler func(...interface{}) uint32, args ...interface{}) {
-	setTimeout(name, uint32(inteval), handler, args)
-	LogInfo("new timerout:%v inteval:%v", name, inteval)
+func SetTimeout(inteval int, handler func(...interface{}) uint32, args ...interface{}) uint32 {
+	id := setTimeout(0, uint32(inteval), handler, args)
+	LogInfo("new timerout:%v inteval:%v", id, inteval)
+	return id
 }
 
-func setTimeout(name string, inteval uint32, handler func(...interface{}) uint32, args ...interface{}) {
+func setTimeout(id uint32, inteval uint32, handler func(...interface{}) uint32, args ...interface{}) uint32 {
 	if inteval <= 0 {
-		return
+		return 0
 	}
 	bucket := 0
 	offset := inteval
@@ -76,28 +77,40 @@ func setTimeout(name string, inteval uint32, handler func(...interface{}) uint32
 		bucket++
 	}
 	if offset < 1 {
-		return
+		return 0
 	}
 	if inteval < basePerWheel[bucket]*offset {
-		return
+		return 0
 	}
 	left -= basePerWheel[bucket] * (offset - 1)
 	pos := (newest[bucket] + offset) % slotCntPerWheel[bucket]
-
-	node := &timeNode{name, left, handler, args}
+	node := &timeNode{id, left, handler, args}
 
 	timerMapLock.Lock()
-	timerMap[name] = node
+	if id > 0 {
+		timerMap[id] = node
+	} else {
+		timerIndex++
+		if timerIndex == 0 {
+			timerIndex++
+		}
+		node.Id = timerIndex
+		timerMap[timerIndex] = node
+	}
 	timerMapLock.Unlock()
 
 	timewheelsLock.Lock()
 	timewheels[bucket][pos].PushBack(node)
 	timewheelsLock.Unlock()
+	if id > 0 {
+		return id
+	}
+	return timerIndex
 }
 
-func DelTimeout(name string) {
+func DelTimeout(index uint32) {
 	timerMapLock.Lock()
-	if v, ok := timerMap[name]; ok {
+	if v, ok := timerMap[index]; ok {
 		v.Callback = nil
 		v.Args = nil
 	}
@@ -115,7 +128,7 @@ func tick() {
 			node := e.Value.(*timeNode)
 
 			timerMapLock.Lock()
-			delete(timerMap, node.Name)
+			delete(timerMap, node.Id)
 			timerMapLock.Unlock()
 
 			if nil != node.Callback {
@@ -123,10 +136,10 @@ func tick() {
 					if 0 == bucket || 0 == node.Inteval {
 						t := node.Callback(node.Args)
 						if t > 0 {
-							setTimeout(node.Name, t, node.Callback, node.Args)
+							setTimeout(node.Id, t, node.Callback, node.Args)
 						}
 					} else {
-						setTimeout(node.Name, node.Inteval, node.Callback, node.Args)
+						setTimeout(node.Id, node.Inteval, node.Callback, node.Args)
 					}
 				})
 			}

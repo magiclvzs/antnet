@@ -77,7 +77,7 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 				return re, nil
 			}
 		}
-		LogError("redis script error errstr:%s", err)
+		LogError("redis script error cmd:%d errstr:%s", cmd, err)
 		return nil, ErrDBErr
 	}
 
@@ -108,7 +108,7 @@ func (r *RedisManager) SetScript(cmd int, str string) {
 	for _, v := range r.subMap {
 		hash, err := v.ScriptLoad(str).Result()
 		if err != nil {
-			LogError("redis script load error errstr:%s", err)
+			LogError("redis script load error cmd:%d errstr:%s", cmd, err)
 			break
 		}
 		r.script_map_hash[cmd] = hash

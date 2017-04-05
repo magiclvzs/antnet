@@ -42,6 +42,7 @@ type IMsgQue interface {
 
 	Stop()
 	IsStop() bool
+	Available() bool
 
 	Send(m *Message) (re bool)
 	SendString(str string) (re bool)
@@ -91,7 +92,9 @@ func (r *msgQue) GetUser() interface{} {
 func (r *msgQue) GetHandler() IMsgHandler {
 	return r.handler
 }
-
+func (r *msgQue) Available() bool {
+	return true
+}
 func (r *msgQue) GetMsgType() MsgType {
 	return r.msgTyp
 }
@@ -197,7 +200,6 @@ func (r *msgQue) setCallback(tag int, c chan interface{}) {
 }
 
 func (r *msgQue) BaseStop() {
-	LogInfo("msgque close id:%d", r.id)
 	if r.cwrite != nil {
 		close(r.cwrite)
 	}
@@ -209,6 +211,7 @@ func (r *msgQue) BaseStop() {
 	msgqueMapSync.Lock()
 	delete(msgqueMap, r.id)
 	msgqueMapSync.Unlock()
+	LogInfo("msgque close id:%d", r.id)
 }
 
 func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
@@ -344,11 +347,13 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 	return nil
 }
 
-func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser, user interface{}) {
+func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser, user interface{}) IMsgQue {
 	msgque := newTcpConn(netype, addr, nil, typ, handler, parser, user)
 	if handler.OnNewMsgQue(msgque) {
 		msgque.Reconnect(0)
+		return msgque
 	} else {
 		msgque.Stop()
 	}
+	return nil
 }
