@@ -135,7 +135,7 @@ func NewDataMsg(data []byte) *Message {
 	}
 }
 
-func NewMsg(cmd uint8, act uint8, index uint16, err uint16, data []byte) *Message {
+func NewMsg(cmd, act uint8, index, err uint16, data []byte) *Message {
 	return &Message{
 		Head: &MessageHead{
 			Len:   uint32(len(data)),
@@ -148,7 +148,7 @@ func NewMsg(cmd uint8, act uint8, index uint16, err uint16, data []byte) *Messag
 	}
 }
 
-func NewTagMsg(cmd uint8, act uint8, index uint16) *Message {
+func NewTagMsg(cmd, act uint8, index uint16) *Message {
 	return &Message{
 		Head: &MessageHead{
 			Cmd:   cmd,

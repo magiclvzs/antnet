@@ -134,7 +134,9 @@ func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
 			return reflect.New(s2cType).Interface()
 		}
 	}
-	r.msgMap[CmdAct(cmd, act)] = p
+	if c2s != nil || s2c != nil {
+		r.msgMap[CmdAct(cmd, act)] = p
+	}
 }
 
 func (r *Parser) RegisterMsgFunc(c2sFunc ParseFunc, s2cFunc ParseFunc) {

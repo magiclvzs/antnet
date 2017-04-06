@@ -12,7 +12,6 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrPBUnPack
 	}
-
 	p, ok := r.factory.msgMap[msg.Head.CmdAct()]
 	if ok {
 		if p.C2S() != nil {

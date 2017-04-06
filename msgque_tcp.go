@@ -87,11 +87,9 @@ func (r *tcpMsgQue) readMsg() {
 			if err != nil {
 				break
 			}
-
 			if head = NewMessageHead(headData); head == nil {
 				break
 			}
-
 			if head.Len == 0 {
 				if !r.processMsg(r, &Message{Head: head}) {
 					break
@@ -105,6 +103,7 @@ func (r *tcpMsgQue) readMsg() {
 			if err != nil {
 				break
 			}
+
 			if !r.processMsg(r, &Message{Head: head, Data: data}) {
 				break
 			}

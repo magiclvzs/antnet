@@ -49,7 +49,7 @@ type IMsgQue interface {
 	SendStringLn(str string) (re bool)
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
-	SendCallback(m *Message, c chan interface{}) (re bool)
+	SendCallback(m *Message, c chan *Message) (re bool)
 	SetTimeout(t int)
 	GetTimeout() int
 	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
@@ -76,7 +76,7 @@ type msgQue struct {
 	timeout       int //传输超时
 
 	init         bool
-	callback     map[int]chan interface{}
+	callback     map[int]chan *Message
 	user         interface{}
 	callbackLock sync.Mutex
 }
@@ -132,8 +132,9 @@ func (r *msgQue) Send(m *Message) (re bool) {
 	return true
 }
 
-func (r *msgQue) SendCallback(m *Message, c chan interface{}) (re bool) {
-	if c == nil || len(c) < 1 {
+func (r *msgQue) SendCallback(m *Message, c chan *Message) (re bool) {
+	if c == nil || cap(c) < 1 {
+		LogError("try send callback but chan is null or no buffer")
 		return
 	}
 	if r.Send(m) {
@@ -162,6 +163,9 @@ func (r *msgQue) SendByteStrLn(str []byte) (re bool) {
 }
 
 func (r *msgQue) tryCallback(msg *Message) (re bool) {
+	if r.callback == nil {
+		return false
+	}
 	defer func() {
 		if err := recover(); err != nil {
 
@@ -174,13 +178,13 @@ func (r *msgQue) tryCallback(msg *Message) (re bool) {
 		if c, ok := r.callback[tag]; ok {
 			delete(r.callback, tag)
 			c <- msg
-			return true
+			re = true
 		}
 	}
 	return
 }
 
-func (r *msgQue) setCallback(tag int, c chan interface{}) {
+func (r *msgQue) setCallback(tag int, c chan *Message) {
 	defer func() {
 		if err := recover(); err != nil {
 
@@ -191,7 +195,7 @@ func (r *msgQue) setCallback(tag int, c chan interface{}) {
 
 	r.callbackLock.Lock()
 	if r.callback == nil {
-		r.callback = make(map[int]chan interface{})
+		r.callback = make(map[int]chan *Message)
 	}
 	oc, ok := r.callback[tag]
 	if ok { //可能已经关闭
@@ -221,7 +225,7 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 			msg.IMsgParser = mp
 		} else {
 			if r.parser.GetErrType() == ParseErrTypeSendRemind {
-				r.Send(r.parser.GetRemindMsg(err, r.msgTyp))
+				r.Send(r.parser.GetRemindMsg(err, r.msgTyp).CopyTag(msg))
 				return true
 			} else if r.parser.GetErrType() == ParseErrTypeClose {
 				return false
@@ -262,8 +266,7 @@ func (r *DefMsgHandler) OnDelMsgQue(msgque IMsgQue)                     {}
 func (r *DefMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool { return true }
 func (r *DefMsgHandler) OnConnectComplete(msgque IMsgQue, ok bool) bool { return true }
 func (r *DefMsgHandler) GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc {
-	if msgque.GetConnType() == ConnTypeConn {
-		msgque.tryCallback(msg)
+	if msgque.tryCallback(msg) {
 		return r.OnProcessMsg
 	}
 
