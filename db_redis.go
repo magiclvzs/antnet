@@ -3,6 +3,7 @@ package antnet
 import (
 	"net"
 	"strings"
+	"sync/atomic"
 
 	"gopkg.in/redis.v5"
 )
@@ -51,10 +52,10 @@ func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64,
 }
 
 func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}, error) {
-	hash, _ := r.manager.script_map_hash[cmd]
+	hash, _ := scriptHashMap[cmd]
 	re, err := r.EvalSha(hash, keys, args...).Result()
 	if err != nil {
-		_, ok := r.manager.script_map[cmd]
+		_, ok := scriptMap[cmd]
 		if !ok {
 			LogError("redis script error cmd not found cmd:%v", cmd)
 			return nil, ErrDBErr
@@ -62,22 +63,22 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 
 		if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
 			LogWarn("try reload redis script")
-			for k, v := range r.manager.script_map {
+			for k, v := range scriptMap {
 				hash, err := r.ScriptLoad(v).Result()
 				if err != nil {
-					LogError("redis script load error errstr:%s", err)
+					LogError("redis script load cmd:%v errstr:%s", scriptCommitMap[cmd], err)
 					return nil, ErrDBErr
 				}
-				r.manager.script_map_hash[k] = hash
+				scriptHashMap[k] = hash
 			}
 
-			hash, _ := r.manager.script_map_hash[cmd]
+			hash, _ := scriptHashMap[cmd]
 			re, err := r.EvalSha(hash, keys, args...).Result()
 			if err == nil {
 				return re, nil
 			}
 		}
-		LogError("redis script error cmd:%d errstr:%s", cmd, err)
+		LogError("redis script error cmd:%v errstr:%s", scriptCommitMap[cmd], err)
 		return nil, ErrDBErr
 	}
 
@@ -85,10 +86,8 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 }
 
 type RedisManager struct {
-	dbs             []*Redis
-	subMap          map[string]*Redis
-	script_map      map[int]string
-	script_map_hash map[int]string
+	dbs    []*Redis
+	subMap map[string]*Redis
 }
 
 func (r *RedisManager) GetByRid(rid int) *Redis {
@@ -97,22 +96,6 @@ func (r *RedisManager) GetByRid(rid int) *Redis {
 
 func (r *RedisManager) GetGlobal() *Redis {
 	return r.GetByRid(0)
-}
-
-func (r *RedisManager) SetScript(cmd int, str string) {
-	if r.script_map == nil {
-		r.script_map = map[int]string{}
-		r.script_map_hash = map[int]string{}
-	}
-	r.script_map[cmd] = str
-	for _, v := range r.subMap {
-		hash, err := v.ScriptLoad(str).Result()
-		if err != nil {
-			LogError("redis script load error cmd:%d errstr:%s", cmd, err)
-			break
-		}
-		r.script_map_hash[cmd] = hash
-	}
 }
 
 func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
@@ -149,6 +132,20 @@ func (r *RedisManager) close() {
 	}
 }
 
+var (
+	scriptMap             = map[int]string{}
+	scriptCommitMap       = map[int]string{}
+	scriptHashMap         = map[int]string{}
+	scriptIndex     int32 = 0
+)
+
+func NewRedisScript(commit, str string) int {
+	cmd := int(atomic.AddInt32(&scriptIndex, 1))
+	scriptMap[cmd] = str
+	scriptCommitMap[cmd] = commit
+	return cmd
+}
+
 var redisManagers []*RedisManager
 
 func NewRedisManager(conf []*RedisConfig) *RedisManager {
@@ -169,6 +166,17 @@ func NewRedisManager(conf []*RedisConfig) *RedisManager {
 		redisManager.subMap[v.Addr] = re
 		redisManager.dbs = append(redisManager.dbs, re)
 	}
+	for k, v := range scriptMap {
+		for _, r := range redisManager.subMap {
+			hash, err := r.ScriptLoad(v).Result()
+			if err != nil {
+				LogError("redis script load error cmd:%v errstr:%s", scriptCommitMap[k], err)
+				break
+			}
+			scriptHashMap[k] = hash
+		}
+	}
+
 	redisManagers = append(redisManagers, redisManager)
 	return redisManager
 }

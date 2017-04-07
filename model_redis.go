@@ -28,8 +28,12 @@ func (r *RedisModel) ParseDBStr(str string, v proto.Message) bool {
 	return ParseDBStr(str, v)
 }
 
-func (r *RedisModel) ParsePb(data []byte, v proto.Message) bool {
-	return ParsePb(data, v)
+func (r *RedisModel) ParsePbData(data []byte, v proto.Message) bool {
+	return ParsePbData(data, v)
+}
+
+func (r *RedisModel) ParsePbStr(str string, v proto.Message) bool {
+	return ParsePbStr(str, v)
 }
 
 func DBData(v proto.Message) []byte {
@@ -47,6 +51,11 @@ func PbData(v proto.Message) []byte {
 	return data
 }
 
+func PbStr(v proto.Message) string {
+	data, _ := proto.Marshal(v)
+	return string(data)
+}
+
 func ParseDBData(data []byte, v proto.Message) bool {
 	err := msgpack.Unmarshal(data, v)
 	return err == nil
@@ -57,7 +66,12 @@ func ParseDBStr(str string, v proto.Message) bool {
 	return err == nil
 }
 
-func ParsePb(data []byte, v proto.Message) bool {
+func ParsePbData(data []byte, v proto.Message) bool {
 	err := proto.Unmarshal(data, v)
+	return err == nil
+}
+
+func ParsePbStr(str string, v proto.Message) bool {
+	err := proto.Unmarshal([]byte(str), v)
 	return err == nil
 }
