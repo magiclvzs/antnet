@@ -91,8 +91,12 @@ func Tag(cmd, act uint8, index uint16) int {
 }
 
 func MD5Str(s string) string {
+	return MD5Bytes([]byte(s))
+}
+
+func MD5Bytes(s []byte) string {
 	md5Ctx := md5.New()
-	md5Ctx.Write([]byte(s))
+	md5Ctx.Write(s)
 	cipherStr := md5Ctx.Sum(nil)
 	return hex.EncodeToString(cipherStr)
 }
