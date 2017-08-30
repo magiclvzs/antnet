@@ -11,13 +11,14 @@ func Test_MinHeap(t *testing.T) {
 	}
 
 	i := mh.Pop()
-	Println(i)
+	Println(i, mh.Len())
 
-	mh.Push(1, 1)
+	mh.Push(1, 554654)
+	mh.Push(1, 333)
 	i = mh.Pop()
-	Println(i)
+	Println(i, mh.Len())
 
 	mh.Push(0, 19384)
 	i = mh.Pop()
-	Println(i)
+	Println(i, mh.Len())
 }

@@ -28,11 +28,15 @@ func (r *priorityQueue) Swap(i, j int) {
 }
 
 func (r *priorityQueue) Push(x interface{}) {
-	n := len(r.s)
 	it := x.(*item)
-	it.index = n
-	r.s = append(r.s, it)
-	r.m[it.value] = it
+	if _, ok := r.m[it.value]; !ok {
+		n := len(r.s)
+		it.index = n
+		r.s = append(r.s, it)
+		r.m[it.value] = it
+	} else {
+		LogWarn("heap can't insert repeated value:%v", it.value)
+	}
 }
 
 func (r *priorityQueue) Pop() interface{} {
@@ -48,8 +52,7 @@ type Heap struct {
 }
 
 func (r *Heap) Push(priority, value int) {
-	it := &item{priority: priority, value: value}
-	heap.Push(r.p, it)
+	heap.Push(r.p, &item{priority: priority, value: value})
 }
 
 func (r *Heap) Pop() int {
@@ -61,6 +64,10 @@ func (r *Heap) Update(value, priority int) {
 		it.priority = priority
 		heap.Fix(r.p, it.index)
 	}
+}
+
+func (r *Heap) Len() int {
+	return len(r.p.m)
 }
 
 func NewMinHeap() *Heap {
