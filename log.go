@@ -27,14 +27,15 @@ func (r *ConsoleLogger) Write(str string) {
 	}
 }
 
-type FileLoggerFull func(path string)
-
+type OnFileLogFull func(path string)
+type OnFileLogTimeout func(path string) int
 type FileLogger struct {
-	Path    string
-	Ln      bool
-	Timeout int //0表示不设置
-	MaxSize int //0表示不限制，最大大小
-	OnFull  FileLoggerFull
+	Path      string
+	Ln        bool
+	Timeout   int //0表示不设置, 单位s
+	MaxSize   int //0表示不限制，最大大小
+	OnFull    OnFileLogFull
+	OnTimeout OnFileLogTimeout
 
 	size     int
 	file     *os.File
@@ -58,7 +59,7 @@ func (r *FileLogger) Write(str string) {
 	if r.MaxSize > 0 && newsize >= r.MaxSize {
 		r.file.Close()
 		r.file = nil
-		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%d", time.Now().Unix()) + r.extname
+		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%d", Timestamp) + r.extname
 		os.Rename(r.Path, newpath)
 		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 		if err == nil {
@@ -97,12 +98,13 @@ const (
 )
 
 type Log struct {
-	logger  []ILogger
-	cwrite  chan string
-	clogger chan ILogger
-	bufsize int
-	stop    int32
-	level   LogLevel
+	logger   []ILogger
+	cwrite   chan string
+	clogger  chan ILogger
+	ctimeout chan *FileLogger
+	bufsize  int
+	stop     int32
+	level    LogLevel
 }
 
 func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
@@ -121,6 +123,14 @@ func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
 			}
 
 			f.size = int(info.Size())
+			if f.Timeout > 0 {
+				SetTimeout(f.Timeout*1000, func(...interface{}) int {
+					defer func() { recover() }()
+					r.ctimeout <- f
+					return 0
+				})
+			}
+
 			return f
 		}
 	}
@@ -141,6 +151,29 @@ func (r *Log) start() {
 						writer.Write(s)
 					}
 				}
+			case c, ok := <-r.ctimeout:
+				if ok {
+					c.file.Close()
+					c.file = nil
+					newpath := c.dirname + "/" + c.filename + fmt.Sprintf("_%d", Timestamp) + c.extname
+					os.Rename(c.Path, newpath)
+					file, err := os.OpenFile(c.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+					if err == nil {
+						c.file = file
+					}
+					c.size = 0
+					if c.OnTimeout != nil {
+						nc := c.OnTimeout(newpath)
+						if nc > 0 {
+							SetTimeout(nc*1000, func(...interface{}) int {
+								defer func() { recover() }()
+								r.ctimeout <- c
+								return 0
+							})
+						}
+					}
+
+				}
 			case <-cstop:
 			}
 		}
@@ -157,6 +190,7 @@ func (r *Log) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
 		close(r.clogger)
 		close(r.cwrite)
+		close(r.ctimeout)
 	}
 }
 
@@ -248,10 +282,11 @@ func (r *Log) Fatal(v ...interface{}) {
 
 func NewLog(bufsize int, logger ...ILogger) *Log {
 	log := &Log{
-		bufsize: bufsize,
-		cwrite:  make(chan string, bufsize),
-		clogger: make(chan ILogger, 32),
-		level:   LogLevelAllOn,
+		bufsize:  bufsize,
+		cwrite:   make(chan string, bufsize),
+		clogger:  make(chan ILogger, 32),
+		ctimeout: make(chan *FileLogger, 32),
+		level:    LogLevelAllOn,
 	}
 	if len(logger) > 0 {
 		for _, l := range logger {

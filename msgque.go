@@ -225,7 +225,11 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 			msg.IMsgParser = mp
 		} else {
 			if r.parser.GetErrType() == ParseErrTypeSendRemind {
-				r.Send(r.parser.GetRemindMsg(err, r.msgTyp).CopyTag(msg))
+				if msg.Head != nil {
+					r.Send(r.parser.GetRemindMsg(err, r.msgTyp).CopyTag(msg))
+				} else {
+					r.Send(r.parser.GetRemindMsg(err, r.msgTyp))
+				}
 				return true
 			} else if r.parser.GetErrType() == ParseErrTypeClose {
 				return false

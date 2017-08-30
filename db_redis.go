@@ -3,9 +3,10 @@ package antnet
 import (
 	"net"
 	"strings"
+	"sync"
 	"sync/atomic"
 
-	"gopkg.in/redis.v5"
+	"github.com/go-redis/redis"
 )
 
 type RedisConfig struct {
@@ -55,25 +56,21 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 	hash, _ := scriptHashMap[cmd]
 	re, err := r.EvalSha(hash, keys, args...).Result()
 	if err != nil {
-		_, ok := scriptMap[cmd]
+		script, ok := scriptMap[cmd]
 		if !ok {
 			LogError("redis script error cmd not found cmd:%v", cmd)
 			return nil, ErrDBErr
 		}
 
 		if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-			LogWarn("try reload redis script")
-			for k, v := range scriptMap {
-				hash, err := r.ScriptLoad(v).Result()
-				if err != nil {
-					LogError("redis script load cmd:%v errstr:%s", scriptCommitMap[cmd], err)
-					return nil, ErrDBErr
-				}
-				scriptHashMap[k] = hash
+			LogInfo("try reload redis script %v", scriptCommitMap[cmd])
+			hash, err = r.ScriptLoad(script).Result()
+			if err != nil {
+				LogError("redis script load cmd:%v errstr:%s", scriptCommitMap[cmd], err)
+				return nil, ErrDBErr
 			}
-
-			hash, _ := scriptHashMap[cmd]
-			re, err := r.EvalSha(hash, keys, args...).Result()
+			scriptHashMap[cmd] = hash
+			re, err = r.EvalSha(hash, keys, args...).Result()
 			if err == nil {
 				return re, nil
 			}
@@ -86,12 +83,18 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 }
 
 type RedisManager struct {
-	dbs    []*Redis
-	subMap map[string]*Redis
+	dbs      []*Redis
+	subMap   map[string]*Redis
+	channels []string
+	fun      func(channel, data string)
+	lock     sync.RWMutex
 }
 
 func (r *RedisManager) GetByRid(rid int) *Redis {
-	return r.dbs[rid]
+	r.lock.RLock()
+	db := r.dbs[rid]
+	r.lock.RUnlock()
+	return db
 }
 
 func (r *RedisManager) GetGlobal() *Redis {
@@ -99,30 +102,61 @@ func (r *RedisManager) GetGlobal() *Redis {
 }
 
 func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
+	r.channels = channels
+	r.fun = fun
 	for _, v := range r.subMap {
 		if v.pubsub != nil {
 			v.pubsub.Close()
 		}
 	}
 	for _, v := range r.subMap {
-		pubsub, err := v.Subscribe(channels...)
-		if err != nil {
-			LogError("redis sub failed:%s", err, pubsub)
-		} else {
-			v.pubsub = pubsub
-			Go(func() {
-				for IsRuning() {
-					msg, err := pubsub.ReceiveMessage()
-					if err == nil {
-						fun(msg.Channel, msg.Payload)
-					} else if _, ok := err.(net.Error); !ok {
-						break
-					}
+		pubsub := v.Subscribe(channels...)
+		v.pubsub = pubsub
+		Go(func() {
+			for IsRuning() {
+				msg, err := pubsub.ReceiveMessage()
+				if err == nil {
+					fun(msg.Channel, msg.Payload)
+				} else if _, ok := err.(net.Error); !ok {
+					break
 				}
-			})
-		}
+			}
+		})
 	}
 }
+
+func (r *RedisManager) Add(conf *RedisConfig) {
+	re := &Redis{
+		Client: redis.NewClient(&redis.Options{
+			Addr:     conf.Addr,
+			Password: conf.Passwd,
+			PoolSize: conf.PoolSize,
+		}),
+		conf:    conf,
+		manager: r,
+	}
+	LogInfo("connect to redis %v", conf.Addr)
+	if _, ok := r.subMap[conf.Addr]; !ok {
+		r.subMap[conf.Addr] = re
+		pubsub := re.Subscribe(r.channels...)
+		re.pubsub = pubsub
+		Go(func() {
+			for IsRuning() {
+				msg, err := pubsub.ReceiveMessage()
+				if err == nil {
+					r.fun(msg.Channel, msg.Payload)
+				} else if _, ok := err.(net.Error); !ok {
+					break
+				}
+			}
+		})
+	}
+
+	r.lock.Lock()
+	r.dbs = append(r.dbs, re)
+	r.lock.Unlock()
+}
+
 func (r *RedisManager) close() {
 	for _, v := range r.dbs {
 		if v.pubsub != nil {
@@ -165,16 +199,6 @@ func NewRedisManager(conf []*RedisConfig) *RedisManager {
 		LogInfo("connect to redis %v", v.Addr)
 		redisManager.subMap[v.Addr] = re
 		redisManager.dbs = append(redisManager.dbs, re)
-	}
-	for k, v := range scriptMap {
-		for _, r := range redisManager.subMap {
-			hash, err := r.ScriptLoad(v).Result()
-			if err != nil {
-				LogError("redis script load error cmd:%v errstr:%s", scriptCommitMap[k], err)
-				break
-			}
-			scriptHashMap[k] = hash
-		}
 	}
 
 	redisManagers = append(redisManagers, redisManager)

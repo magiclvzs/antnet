@@ -3,7 +3,7 @@ package antnet
 
 import (
 	"github.com/golang/protobuf/proto"
-	"gopkg.in/vmihailenco/msgpack.v2"
+	"github.com/vmihailenco/msgpack"
 )
 
 type RedisModel struct{}

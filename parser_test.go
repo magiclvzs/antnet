@@ -1,7 +1,6 @@
 package antnet
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -19,11 +18,11 @@ type GetGamerRmb struct {
 
 func Test_CmdParser(t *testing.T) {
 	pm := Parser{Type: ParserTypeCmd}
-	pm.RegisterMsg(&GetGamerLevel{})
+	pm.RegisterMsg(&GetGamerLevel{}, nil)
 
 	p := pm.Get()
 	m, _ := p.ParseC2S(NewStrMsg("get gamer 1 level"))
-	fmt.Printf("%#v\n", m.C2S().(*GetGamerLevel))
+	Printf("%#v\n", m.C2S().(*GetGamerLevel))
 
-	fmt.Println(m.C2SString())
+	Println(m.C2SString())
 }

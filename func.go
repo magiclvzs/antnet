@@ -110,7 +110,7 @@ func Go(fn func()) {
 		LogDebug("goroutine start id:%d count:%d from:%s", id, id, debugStr)
 	}
 	go func() {
-		fn()
+		Try(fn, nil)
 		waitAll.Done()
 		c = atomic.AddInt32(&gocount, ^int32(0))
 
@@ -134,7 +134,8 @@ func GoArgs(fn func(...interface{}), args ...interface{}) {
 	}
 
 	go func() {
-		fn(args...)
+		Try(func() { fn(args...) }, nil)
+
 		waitAll.Done()
 		c = atomic.AddInt32(&gocount, ^int32(0))
 		if DefLog.Level() <= LogLevelDebug {
@@ -165,7 +166,7 @@ func Go2(fn func(cstop chan struct{})) bool {
 		stopMapLock.Lock()
 		stopMap[id] = cstop
 		stopMapLock.Unlock()
-		fn(cstop)
+		Try(func() { fn(cstop) }, nil)
 
 		stopMapLock.Lock()
 		if _, ok := stopMap[id]; ok {
@@ -304,10 +305,15 @@ func JoinStr(a []string, sep string) string {
 	return strings.Join(a, sep)
 }
 
-func GetSelfIp(ifnames ...string) (ips []string) {
+var allIp []string
+
+func GetSelfIp(ifnames ...string) []string {
+	if allIp != nil {
+		return allIp
+	}
 	inters, _ := net.Interfaces()
 	if len(ifnames) == 0 {
-		ifnames = []string{"eth", "lo"}
+		ifnames = []string{"eth", "lo", "无线网络连接", "本地连接"}
 	}
 
 	filterFunc := func(name string) bool {
@@ -327,12 +333,12 @@ func GetSelfIp(ifnames ...string) (ips []string) {
 		for _, a := range addrs {
 			if ipnet, ok := a.(*net.IPNet); ok {
 				if ipnet.IP.To4() != nil {
-					ips = append(ips, ipnet.IP.String())
+					allIp = append(allIp, ipnet.IP.String())
 				}
 			}
 		}
 	}
-	return
+	return allIp
 }
 
 func GetSelfIntraIp(ifnames ...string) (ips []string) {
@@ -372,8 +378,34 @@ func SplitStr(s string, sep string) []string {
 	return strings.Split(s, sep)
 }
 
+func SplitStrN(s string, sep string, n int) []string {
+	return strings.SplitN(s, sep, n)
+}
+
+func StrFind(s string, f string) int {
+	return strings.Index(s, f)
+}
+
+func ReplaceStr(s, old, new string) string {
+	return strings.Replace(s, old, new, -1)
+}
+
 func TrimStr(s string) string {
 	return strings.TrimSpace(s)
+}
+
+func Try(fun func(), handler func(interface{})) {
+	defer func() {
+		if err := recover(); err != nil {
+			if handler == nil {
+				LogStack()
+				LogError("error catch:%v", err)
+			} else {
+				handler(err)
+			}
+		}
+	}()
+	fun()
 }
 
 func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {

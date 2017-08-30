@@ -2,9 +2,9 @@ package antnet
 
 import (
 	"net"
-	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type udpMsgQue struct {
@@ -66,8 +66,7 @@ func (r *udpMsgQue) read() {
 	defer func() {
 		if err := recover(); err != nil {
 			LogError("msgque read panic id:%v err:%v", r.id, err.(error))
-			buf := make([]byte, 1<<12)
-			LogError(string(buf[:runtime.Stack(buf, false)]))
+			LogStack()
 		}
 		r.Stop()
 	}()
@@ -93,20 +92,11 @@ func (r *udpMsgQue) read() {
 				msg = &Message{Head: head}
 			}
 		}
-
+		r.lastTick = Timestamp
 		if !r.init {
 			if !r.handler.OnNewMsgQue(r) {
 				break
 			}
-			SetTimeout(r.timeout*1000, func(args ...interface{}) uint32 {
-				left := int(NowTick - r.lastTick)
-				if left >= r.timeout*1000 {
-					r.Stop()
-					return 0
-				} else {
-					return uint32(r.timeout - left)
-				}
-			}, nil)
 			r.init = true
 		}
 
@@ -120,13 +110,27 @@ func (r *udpMsgQue) write() {
 	defer func() {
 		if err := recover(); err != nil {
 			LogError("msgque write panic id:%v err:%v", r.id, err.(error))
-			r.Stop()
+			LogStack()
 		}
+		r.Stop()
 	}()
-	var m *Message
+
+	timeouCheck := false
+	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() {
+		var m *Message = nil
 		select {
 		case m = <-r.cwrite:
+		case <-tick.C:
+			left := int(Timestamp - r.lastTick)
+			if left < r.timeout {
+				timeouCheck = true
+				tick = time.NewTimer(time.Second * time.Duration(r.timeout-left))
+			}
+		}
+		if timeouCheck {
+			timeouCheck = false
+			continue
 		}
 		if m == nil {
 			break
@@ -146,6 +150,8 @@ func (r *udpMsgQue) write() {
 				r.conn.WriteToUDP(m.Head.Bytes(), r.addr)
 			}
 		}
+
+		r.lastTick = Timestamp
 	}
 }
 
@@ -214,7 +220,7 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 		conn:     conn,
 		cread:    make(chan []byte, 64),
 		addr:     addr,
-		lastTick: NowTick,
+		lastTick: Timestamp,
 	}
 	if parser != nil {
 		msgque.parser = parser.Get()

@@ -1,156 +1,137 @@
 package antnet
 
 import (
-	"container/list"
-	"sync"
 	"time"
 )
 
-func timerTick() {
-	for i := 0; i < wheelCnt; i++ {
-		for j := uint32(0); j < slotCntPerWheel[i]; j++ {
-			timewheels[i] = append(timewheels[i], list.New())
-		}
+func Sleep(ms int) {
+	time.Sleep(time.Millisecond * time.Duration(ms))
+}
+
+func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
+	if inteval < 0 {
+		LogError("new timerout inteval:%v", inteval)
+		return
 	}
+	LogInfo("new timerout inteval:%v", inteval)
+
+	Go2(func(cstop chan struct{}) {
+		var tick *time.Timer
+		for inteval > 0 {
+			tick = time.NewTimer(time.Millisecond * time.Duration(inteval))
+			select {
+			case <-cstop:
+				inteval = 0
+			case <-tick.C:
+				tick.Stop()
+				inteval = fn(args...)
+			}
+		}
+		if tick != nil {
+			tick.Stop()
+		}
+	})
+}
+
+func timerTick() {
+	TimeNanoStamp = time.Now().UnixNano()
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
 	Go(func() {
 		for IsRuning() {
 			Sleep(1)
-			nowTick := NowTick
 			NowTick = time.Now().UnixNano() / 1000000
 			Timestamp = NowTick / 1000
-			for nowTick < NowTick {
-				nowTick++
-				tick()
-			}
+			TimeNanoStamp = time.Now().UnixNano()
 		}
 	})
 }
 
-func Sleep(ms int) {
-	time.Sleep(time.Millisecond * time.Duration(ms))
+/**
+* @brief 获得timestamp距离下个小时的时间，单位s
+*
+* @return uint32_t 距离下个小时的时间，单位s
+ */
+func GetNextHourIntervalS() int {
+	return int(3600 - (Timestamp % 3600))
 }
 
-const wheelCnt = 5
-
-var slotCntPerWheel = [wheelCnt]uint32{256, 64, 64, 64, 64}
-var rightShiftPerWheel = [wheelCnt]uint32{8, 6, 6, 6, 6}
-var basePerWheel = [wheelCnt]uint32{1, 256, 256 * 64, 256 * 64 * 64, 256 * 64 * 64 * 64}
-
-var newest [wheelCnt]uint32
-var timewheels [5][]*list.List
-var timewheelsLock sync.Mutex
-
-var timerMap map[uint32]*timeNode = make(map[uint32]*timeNode)
-var timerMapLock sync.Mutex
-var timerIndex uint32 = 0
-
-type timeNode struct {
-	Id       uint32
-	Inteval  uint32
-	Callback func(...interface{}) uint32
-	Args     []interface{}
+/**
+ * @brief 获得timestamp距离下个小时的时间，单位ms
+ *
+ * @return uint32_t 距离下个小时的时间，单位ms
+ */
+func GetNextHourIntervalMS() int {
+	return GetNextHourIntervalS() * 1000
 }
 
-func SetTimeout(inteval int, handler func(...interface{}) uint32, args ...interface{}) uint32 {
-	id := setTimeout(0, uint32(inteval), handler, args)
-	LogInfo("new timerout:%v inteval:%v", id, inteval)
-	return id
-}
-
-func setTimeout(id uint32, inteval uint32, handler func(...interface{}) uint32, args ...interface{}) uint32 {
-	if inteval <= 0 {
-		return 0
+/**
+* @brief 时间戳转换为小时，24小时制，0点用24表示
+*
+* @param timestamp 时间戳
+* @param timezone  时区
+* @return uint32_t 小时 范围 1-24
+ */
+func GetHour24(timestamp int64, timezone int) int {
+	hour := (int((timestamp%86400)/3600) + timezone)
+	if hour > 24 {
+		return hour - 24
 	}
-	bucket := 0
-	offset := inteval
-	left := inteval
-	for offset >= slotCntPerWheel[bucket] {
-		offset >>= rightShiftPerWheel[bucket]
-		var tmp uint32 = 1
-		if bucket == 0 {
-			tmp = 0
+	return hour
+}
+
+/**
+ * @brief 时间戳转换为小时，24小时制，0点用0表示
+ *
+ * @param timestamp 时间戳
+ * @param timezone  时区
+ * @return uint32_t 小时 范围 0-23
+ */
+func GetHour23(timestamp int64, timezone int) int {
+	hour := GetHour24(timestamp, timezone)
+	if hour == 24 {
+		return 0 //24点就是0点
+	}
+	return hour
+}
+
+func GetHour(timestamp int64, timezone int) int {
+	return GetHour23(timestamp, timezone)
+}
+
+/**
+* @brief 判断两个时间戳是否是同一天
+*
+* @param now 需要比较的时间戳
+* @param old 需要比较的时间戳
+* @param timezone 时区
+* @return uint32_t 返回不同的天数
+ */
+func IsDiffDay(now, old int64, timezone int) int {
+	now += int64(timezone * 3600)
+	old += int64(timezone * 3600)
+	return int((now / 86400) - (old / 86400))
+}
+
+/**
+* @brief 判断时间戳是否处于一个小时的两边，即一个时间错大于当前的hour，一个小于
+*
+* @param now 需要比较的时间戳
+* @param old 需要比较的时间戳
+* @param hour 小时，0-23
+* @param timezone 时区
+* @return bool true表示时间戳是否处于一个小时的两边
+ */
+func IsDiffHour(now, old int64, hour, timezone int) bool {
+	diff := IsDiffDay(now, old, timezone)
+	if diff == 1 {
+		if GetHour23(old, timezone) > hour {
+			return GetHour23(now, timezone) >= hour
 		}
-		left -= basePerWheel[bucket] * (slotCntPerWheel[bucket] - newest[bucket] - tmp)
-		bucket++
+	} else if diff >= 2 {
+		return true
 	}
-	if offset < 1 {
-		return 0
-	}
-	if inteval < basePerWheel[bucket]*offset {
-		return 0
-	}
-	left -= basePerWheel[bucket] * (offset - 1)
-	pos := (newest[bucket] + offset) % slotCntPerWheel[bucket]
-	node := &timeNode{id, left, handler, args}
 
-	timerMapLock.Lock()
-	if id > 0 {
-		timerMap[id] = node
-	} else {
-		timerIndex++
-		if timerIndex == 0 {
-			timerIndex++
-		}
-		node.Id = timerIndex
-		timerMap[timerIndex] = node
-	}
-	timerMapLock.Unlock()
-
-	timewheelsLock.Lock()
-	timewheels[bucket][pos].PushBack(node)
-	timewheelsLock.Unlock()
-	if id > 0 {
-		return id
-	}
-	return timerIndex
-}
-
-func DelTimeout(index uint32) {
-	timerMapLock.Lock()
-	if v, ok := timerMap[index]; ok {
-		v.Callback = nil
-		v.Args = nil
-	}
-	timerMapLock.Unlock()
-}
-
-func tick() {
-	var n *list.Element
-	for bucket := 0; bucket < wheelCnt; bucket++ {
-		newest[bucket] = (newest[bucket] + 1) % slotCntPerWheel[bucket] //当前指针递增1
-		l := timewheels[bucket][newest[bucket]]
-
-		timewheelsLock.Lock()
-		for e := l.Front(); e != nil; e = n {
-			node := e.Value.(*timeNode)
-
-			timerMapLock.Lock()
-			delete(timerMap, node.Id)
-			timerMapLock.Unlock()
-
-			if nil != node.Callback {
-				Go(func() {
-					if 0 == bucket || 0 == node.Inteval {
-						t := node.Callback(node.Args)
-						if t > 0 {
-							setTimeout(node.Id, t, node.Callback, node.Args)
-						}
-					} else {
-						setTimeout(node.Id, node.Inteval, node.Callback, node.Args)
-					}
-				})
-			}
-
-			n = e.Next()
-			l.Remove(e)
-		}
-		timewheelsLock.Unlock()
-
-		if 0 != newest[bucket] {
-			break
-		}
-	}
+	return (GetHour23(now, timezone) >= hour) && (GetHour23(old, timezone) < hour)
 }
