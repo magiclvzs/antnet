@@ -456,6 +456,7 @@ func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {
 		x, err := strconv.ParseUint(data, 10, 64)
 		return uint64(x), err
 	default:
+		LogError("parse failed type not found type:%v data:%v", kind, data)
 		return nil, errors.New("type not found")
 	}
 }

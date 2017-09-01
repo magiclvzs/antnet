@@ -3,70 +3,33 @@ package antnet
 import (
 	"encoding/csv"
 	"os"
-	"proto/pb"
 	"reflect"
 	"strings"
 )
 
-type GenConfigObject func() interface{}
+type GenConfigObj struct {
+	GenObjFun   func() interface{}
+	ParseObjFun map[reflect.Kind]func(fieldv reflect.Value, data, path string) error
+}
 
-func setValue(fieldv reflect.Value, data, path string) error {
-	if fieldv.Kind() == reflect.Struct {
-		if data == "0" {
-			return nil
-		} else {
-			stringArry := strings.Split(data, "_")
-			if len(stringArry) == (fieldv.NumField() - 1) { //NumField - 1是由于生成pb结构多了一个XXX_unrecognized成员
-				for i := 0; i < (fieldv.NumField() - 1); i++ {
-					if fieldv.Field(i).Kind() == reflect.Ptr {
-						v, err := ParseBaseKind(fieldv.Field(i).Elem().Kind(), stringArry[i])
-						if err != nil {
-							return err
-						}
-						fieldv.Field(i).Elem().Set(reflect.ValueOf(v))
-					} else {
-						v, err := ParseBaseKind(fieldv.Field(i).Kind(), stringArry[i])
-						if err != nil {
-							return err
-						}
-						fieldv.Field(i).Set(reflect.ValueOf(v))
-					}
-				}
-			} else {
-				LogInfo("path:%v split string is err, stringArry len:%v fieldv.NumField:%v\n", path, len(stringArry), fieldv.NumField())
-			}
-		}
-	} else if fieldv.Kind() == reflect.Slice {
-		Try(func() {
-			s := []int32{}
-			isitem := false
-			item := []*pb.ItemConfig{}
-			for _, v := range strings.Split(data, "*") {
-				if strings.Contains(v, "_") {
-					arr := strings.Split(v, "_")
-					isitem = true
-					item = append(item, &pb.ItemConfig{
-						Id:     pb.Int32(int32(Atoi(arr[0]))),
-						Number: pb.Int32(int32(Atoi(arr[1])))})
-				} else {
-					s = append(s, int32(Atoi(v)))
-				}
-			}
-			if isitem {
-				fieldv.Set(reflect.ValueOf(item))
-			} else {
-				fieldv.Set(reflect.ValueOf(s))
-			}
-		}, func(err interface{}) {
-			s := []string{}
-			for _, v := range strings.Split(data, "*") {
-				s = append(s, v)
-			}
-			fieldv.Set(reflect.ValueOf(s))
-		})
+var csvParseMap = map[reflect.Kind]func(fieldv reflect.Value, data, path string) error{}
+
+func SetCSVParseFunc(kind reflect.Kind, fun func(fieldv reflect.Value, data, path string) error) {
+	csvParseMap[kind] = fun
+}
+
+func setValue(fieldv reflect.Value, item, data, path string, f *GenConfigObj) error {
+	pm := csvParseMap
+	if f.ParseObjFun != nil {
+		pm = f.ParseObjFun
+	}
+
+	if fun, ok := pm[fieldv.Kind()]; ok {
+		return fun(fieldv, data, path)
 	} else {
 		v, err := ParseBaseKind(fieldv.Kind(), data)
 		if err != nil {
+			LogError("csv read error path:%v err:%v field:%v", path, err, item)
 			return err
 		}
 		fieldv.Set(reflect.ValueOf(v))
@@ -75,7 +38,7 @@ func setValue(fieldv reflect.Value, data, path string) error {
 	return nil
 }
 
-func ReadConfigFromCSV(path string, nindex int, dataBegin int, f GenConfigObject) (error, []interface{}) {
+func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) (error, []interface{}) {
 	csv_nimap := map[string]int{}
 	nimap := map[string]int{}
 	var dataObj []interface{}
@@ -110,7 +73,7 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f GenConfigObject
 		csv_nimap[stringTemp] = index
 	}
 
-	typ := reflect.ValueOf(f()).Elem().Type()
+	typ := reflect.ValueOf(f.GenObjFun()).Elem().Type()
 	for i := 0; i < typ.NumField(); i++ {
 		name := typ.FieldByIndex([]int{i}).Name
 		if v, ok := csv_nimap[name]; ok {
@@ -121,15 +84,15 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f GenConfigObject
 	}
 
 	for i := dataBegin - 1; i < len(csvdata); i++ {
-		obj := f()
+		obj := f.GenObjFun()
 		objv := reflect.ValueOf(obj)
 		obje := objv.Elem()
 		for k, v := range nimap {
 			switch obje.FieldByName(k).Kind() {
 			case reflect.Ptr:
-				setValue(obje.FieldByName(k).Elem(), strings.TrimSpace(csvdata[i][v]), path)
+				setValue(obje.FieldByName(k).Elem(), k, strings.TrimSpace(csvdata[i][v]), path, f)
 			default:
-				setValue(obje.FieldByName(k), strings.TrimSpace(csvdata[i][v]), path)
+				setValue(obje.FieldByName(k), k, strings.TrimSpace(csvdata[i][v]), path, f)
 			}
 		}
 		dataObj = append(dataObj, obj)
@@ -144,7 +107,7 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f GenConfigObject
   [in] valueIndex 需要读取的字段数据列号
   [in] dataBegin  从哪一行开始输出
 */
-func ReadConfigFromCSVLie(path string, keyIndex int, valueIndex int, dataBegin int, f GenConfigObject) (error, interface{}) {
+func ReadConfigFromCSVLie(path string, keyIndex int, valueIndex int, dataBegin int, f *GenConfigObj) (error, interface{}) {
 	fi, err := os.Open(path)
 	if err != nil {
 		return err, nil
@@ -155,13 +118,13 @@ func ReadConfigFromCSVLie(path string, keyIndex int, valueIndex int, dataBegin i
 		return err, nil
 	}
 
-	obj := f()
+	obj := f.GenObjFun()
 	robj := reflect.Indirect(reflect.ValueOf(obj))
 	for i := dataBegin - 1; i < len(csvdata); i++ {
 		name := csvdata[i][keyIndex-1]
 		bname := []byte(name)
 		bname[0] = byte(int(bname[0]) & ^32)
-		setValue(robj.FieldByName(string(bname)), strings.TrimSpace(csvdata[i][valueIndex-1]), path)
+		setValue(robj.FieldByName(string(bname)), string(bname), strings.TrimSpace(csvdata[i][valueIndex-1]), path, f)
 	}
 
 	return nil, obj
