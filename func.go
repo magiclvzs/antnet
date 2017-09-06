@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -21,18 +20,6 @@ import (
 	"time"
 )
 
-func Print(a ...interface{}) (int, error) {
-	return fmt.Print(a...)
-}
-func Println(a ...interface{}) (int, error) {
-	return fmt.Println(a...)
-}
-func Printf(format string, a ...interface{}) (int, error) {
-	return fmt.Printf(format, a...)
-}
-func Sprintf(format string, a ...interface{}) string {
-	return fmt.Sprintf(format, a...)
-}
 func Stop() {
 	if !atomic.CompareAndSwapInt32(&stop, 0, 1) {
 		return
@@ -310,10 +297,6 @@ func Itoa(num interface{}) string {
 	return ""
 }
 
-func JoinStr(a []string, sep string) string {
-	return strings.Join(a, sep)
-}
-
 var allIp []string
 
 func GetSelfIp(ifnames ...string) []string {
@@ -385,30 +368,6 @@ func ReadFile(path string) ([]byte, error) {
 
 func PathBase(p string) string {
 	return path.Base(p)
-}
-
-func SplitStr(s string, sep string) []string {
-	return strings.Split(s, sep)
-}
-
-func SplitStrN(s string, sep string, n int) []string {
-	return strings.SplitN(s, sep, n)
-}
-
-func StrFind(s string, f string) int {
-	return strings.Index(s, f)
-}
-
-func ReplaceStr(s, old, new string) string {
-	return strings.Replace(s, old, new, -1)
-}
-
-func TrimStr(s string) string {
-	return strings.TrimSpace(s)
-}
-
-func Contains(s, substr string) bool {
-	return strings.Contains(s, substr)
 }
 
 func Try(fun func(), handler func(interface{})) {
