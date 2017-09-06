@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -122,6 +123,10 @@ func Go(fn func()) {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
 	}()
+}
+
+func UnixMs() int64 {
+	return time.Now().UnixNano() / 1000000
 }
 
 func GoArgs(fn func(...interface{}), args ...interface{}) {
@@ -378,6 +383,10 @@ func ReadFile(path string) ([]byte, error) {
 	return data, nil
 }
 
+func PathBase(p string) string {
+	return path.Base(p)
+}
+
 func SplitStr(s string, sep string) []string {
 	return strings.Split(s, sep)
 }
@@ -396,6 +405,10 @@ func ReplaceStr(s, old, new string) string {
 
 func TrimStr(s string) string {
 	return strings.TrimSpace(s)
+}
+
+func Contains(s, substr string) bool {
+	return strings.Contains(s, substr)
 }
 
 func Try(fun func(), handler func(interface{})) {

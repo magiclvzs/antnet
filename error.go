@@ -31,9 +31,12 @@ var (
 	ErrJsonPack      = NewError("json打包错误", 8)
 	ErrJsonUnPack    = NewError("json解析错误", 9)
 	ErrCmdUnPack     = NewError("cmd解析错误", 10)
-	ErrFileRead      = NewError("文件读取错误", 100)
-	ErrDBDataType    = NewError("数据库数据类型错误", 101)
-	ErrNetTimeout    = NewError("网络超时", 200)
+
+	ErrConfigPath = NewError("配置路径错误", 50)
+
+	ErrFileRead   = NewError("文件读取错误", 100)
+	ErrDBDataType = NewError("数据库数据类型错误", 101)
+	ErrNetTimeout = NewError("网络超时", 200)
 
 	ErrErrIdNotFound = NewError("错误没有对应的错误码", 255)
 )

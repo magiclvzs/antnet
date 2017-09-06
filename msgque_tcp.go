@@ -90,7 +90,7 @@ func (r *tcpMsgQue) readMsg() {
 				break
 			}
 			if head = NewMessageHead(headData); head == nil {
-				LogError("msgque:%v read msg head err:%v", r.id)
+				LogError("msgque:%v read msg head failed", r.id)
 				break
 			}
 			if head.Len == 0 {

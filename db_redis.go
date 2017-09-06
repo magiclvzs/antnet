@@ -83,7 +83,7 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 }
 
 type RedisManager struct {
-	dbs      []*Redis
+	dbs      map[int]*Redis
 	subMap   map[string]*Redis
 	channels []string
 	fun      func(channel, data string)
@@ -125,7 +125,14 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 	}
 }
 
-func (r *RedisManager) Add(conf *RedisConfig) {
+func (r *RedisManager) Add(id int, conf *RedisConfig) {
+	r.lock.Lock()
+	if _, ok := r.dbs[id]; ok {
+		LogError("redis already have id:%v", id)
+		r.lock.Unlock()
+		return
+	}
+	r.lock.Unlock()
 	re := &Redis{
 		Client: redis.NewClient(&redis.Options{
 			Addr:     conf.Addr,
@@ -135,26 +142,29 @@ func (r *RedisManager) Add(conf *RedisConfig) {
 		conf:    conf,
 		manager: r,
 	}
-	LogInfo("connect to redis %v", conf.Addr)
+
 	if _, ok := r.subMap[conf.Addr]; !ok {
 		r.subMap[conf.Addr] = re
-		pubsub := re.Subscribe(r.channels...)
-		re.pubsub = pubsub
-		Go(func() {
-			for IsRuning() {
-				msg, err := pubsub.ReceiveMessage()
-				if err == nil {
-					r.fun(msg.Channel, msg.Payload)
-				} else if _, ok := err.(net.Error); !ok {
-					break
+		if len(r.channels) > 0 {
+			pubsub := re.Subscribe(r.channels...)
+			re.pubsub = pubsub
+			Go(func() {
+				for IsRuning() {
+					msg, err := pubsub.ReceiveMessage()
+					if err == nil {
+						r.fun(msg.Channel, msg.Payload)
+					} else if _, ok := err.(net.Error); !ok {
+						break
+					}
 				}
-			}
-		})
+			})
+		}
 	}
 
 	r.lock.Lock()
-	r.dbs = append(r.dbs, re)
+	r.dbs[id] = re
 	r.lock.Unlock()
+	LogInfo("connect to redis %v", conf.Addr)
 }
 
 func (r *RedisManager) close() {
@@ -182,25 +192,13 @@ func NewRedisScript(commit, str string) int {
 
 var redisManagers []*RedisManager
 
-func NewRedisManager(conf []*RedisConfig) *RedisManager {
+func NewRedisManager(conf *RedisConfig) *RedisManager {
 	redisManager := &RedisManager{
 		subMap: map[string]*Redis{},
-	}
-	for _, v := range conf {
-		re := &Redis{
-			Client: redis.NewClient(&redis.Options{
-				Addr:     v.Addr,
-				Password: v.Passwd,
-				PoolSize: v.PoolSize,
-			}),
-			conf:    v,
-			manager: redisManager,
-		}
-		LogInfo("connect to redis %v", v.Addr)
-		redisManager.subMap[v.Addr] = re
-		redisManager.dbs = append(redisManager.dbs, re)
+		dbs:    map[int]*Redis{},
 	}
 
+	redisManager.Add(0, conf)
 	redisManagers = append(redisManagers, redisManager)
 	return redisManager
 }
