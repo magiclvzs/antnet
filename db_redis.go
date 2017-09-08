@@ -25,7 +25,8 @@ type Redis struct {
 func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, error) {
 	data, err := r.Script(cmd, keys, args...)
 	if err != nil {
-		return "", err
+		LogError("redis script failed err:%v", err)
+		return "", ErrDBErr
 	}
 	errcode, ok := data.(int64)
 	if ok {
@@ -43,7 +44,8 @@ func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, 
 func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64, error) {
 	data, err := r.Script(cmd, keys, args...)
 	if err != nil {
-		return 0, err
+		LogError("redis script failed err:%v", err)
+		return 0, ErrDBErr
 	}
 	code, ok := data.(int64)
 	if ok {
