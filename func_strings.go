@@ -44,7 +44,11 @@ func StrTrim(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func Contains(s, substr string) bool {
+func StrContains(s, substr string) bool {
+	return strings.Contains(s, substr)
+}
+
+func ContainsStr(s, substr string) bool {
 	return strings.Contains(s, substr)
 }
 

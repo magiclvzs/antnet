@@ -1,15 +1,17 @@
 package antnet
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"io/ioutil"
+	"io"
+	"mime/multipart"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -219,17 +221,6 @@ func WaitForSystemExit() {
 	Stop()
 }
 
-func PathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return false
-}
-
 func Daemon(skip []string) {
 	if os.Getppid() != 1 {
 		filePath, _ := filepath.Abs(os.Args[0])
@@ -358,18 +349,6 @@ func GetSelfExtraIp(ifnames ...string) (ips []string) {
 	return
 }
 
-func ReadFile(path string) ([]byte, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, ErrFileRead
-	}
-	return data, nil
-}
-
-func PathBase(p string) string {
-	return path.Base(p)
-}
-
 func Try(fun func(), handler func(interface{})) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -431,4 +410,35 @@ func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {
 		LogError("parse failed type not found type:%v data:%v", kind, data)
 		return nil, errors.New("type not found")
 	}
+}
+
+func HttpUpload(url, field, file string) (*http.Response, error) {
+	buf := new(bytes.Buffer)
+	writer := multipart.NewWriter(buf)
+	formFile, err := writer.CreateFormFile(field, file)
+	if err != nil {
+		LogError("create form file failed:%s\n", err)
+		return nil, err
+	}
+
+	srcFile, err := os.Open(file)
+	if err != nil {
+		LogError("%open source file failed:%s\n", err)
+		return nil, err
+	}
+	defer srcFile.Close()
+	_, err = io.Copy(formFile, srcFile)
+	if err != nil {
+		LogError("write to form file falied:%s\n", err)
+		return nil, err
+	}
+
+	contentType := writer.FormDataContentType()
+	writer.Close()
+	resp, err := http.Post(url, contentType, buf)
+	if err != nil {
+		LogError("post failed:%s\n", err)
+	}
+
+	return resp, err
 }

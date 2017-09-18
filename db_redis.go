@@ -127,6 +127,13 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 	}
 }
 
+func (r *RedisManager) Exist(id int) bool {
+	r.lock.Lock()
+	_, ok := r.dbs[id]
+	r.lock.Unlock()
+	return ok
+}
+
 func (r *RedisManager) Add(id int, conf *RedisConfig) {
 	r.lock.Lock()
 	if _, ok := r.dbs[id]; ok {
