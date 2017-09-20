@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/smtp"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -40,24 +41,8 @@ func Stop() {
 
 	stopChan <- nil
 
-	for _, v := range redisManagers {
-		v.close()
-	}
-
 	LogInfo("Server Stop")
 	waitAll.Wait()
-
-	if !atomic.CompareAndSwapInt32(&stopForLog, 0, 1) {
-		return
-	}
-
-	stopMapForLogLock.Lock()
-	for k, v := range stopMapForLog {
-		close(v)
-		delete(stopMapForLog, k)
-	}
-	stopMapForLogLock.Unlock()
-	waitAllForLog.Wait()
 }
 
 func IsStop() bool {
@@ -106,6 +91,29 @@ func Go(fn func()) {
 	go func() {
 		Try(fn, nil)
 		waitAll.Done()
+		c = atomic.AddInt32(&gocount, ^int32(0))
+
+		if DefLog.Level() <= LogLevelDebug {
+			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
+		}
+	}()
+}
+
+func goForRedis(fn func()) {
+	waitAllForRedis.Add(1)
+	var debugStr string
+	id := atomic.AddUint32(&goid, 1)
+	c := atomic.AddInt32(&gocount, 1)
+	if DefLog.Level() <= LogLevelDebug {
+		_, file, line, _ := runtime.Caller(1)
+		i := strings.LastIndex(file, "/") + 1
+		i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
+		debugStr = Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
+		LogDebug("goroutine start id:%d count:%d from:%s", id, id, debugStr)
+	}
+	go func() {
+		Try(fn, nil)
+		waitAllForRedis.Done()
 		c = atomic.AddInt32(&gocount, ^int32(0))
 
 		if DefLog.Level() <= LogLevelDebug {
@@ -208,7 +216,7 @@ func goForLog(fn func(cstop chan struct{})) bool {
 	return true
 }
 
-func WaitForSystemExit() {
+func WaitForSystemExit(atexit ...func()) {
 	statis.StartTime = time.Now()
 	stopChan = make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, os.Kill, syscall.SIGTERM)
@@ -219,6 +227,23 @@ func WaitForSystemExit() {
 		}
 	}
 	Stop()
+	for _, v := range atexit {
+		v()
+	}
+	for _, v := range redisManagers {
+		v.close()
+	}
+	waitAllForRedis.Wait()
+	if !atomic.CompareAndSwapInt32(&stopForLog, 0, 1) {
+		return
+	}
+	stopMapForLogLock.Lock()
+	for k, v := range stopMapForLog {
+		close(v)
+		delete(stopMapForLog, k)
+	}
+	stopMapForLogLock.Unlock()
+	waitAllForLog.Wait()
 }
 
 func Daemon(skip []string) {
@@ -441,4 +466,20 @@ func HttpUpload(url, field, file string) (*http.Response, error) {
 	}
 
 	return resp, err
+}
+
+func SendMail(user, password, host, to, subject, body, mailtype string) error {
+	hp := strings.Split(host, ":")
+	auth := smtp.PlainAuth("", user, password, hp[0])
+	var content_type string
+	if mailtype == "html" {
+		content_type = "Content-Type: text/" + mailtype + "; charset=UTF-8"
+	} else {
+		content_type = "Content-Type: text/plain" + "; charset=UTF-8"
+	}
+
+	msg := []byte("To: " + to + "\r\nFrom: " + user + ">\r\nSubject: " + "\r\n" + content_type + "\r\n\r\n" + body)
+	send_to := strings.Split(to, ";")
+	err := smtp.SendMail(host, auth, user, send_to, msg)
+	return err
 }

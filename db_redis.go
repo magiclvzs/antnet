@@ -114,7 +114,7 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 	for _, v := range r.subMap {
 		pubsub := v.Subscribe(channels...)
 		v.pubsub = pubsub
-		Go(func() {
+		goForRedis(func() {
 			for IsRuning() {
 				msg, err := pubsub.ReceiveMessage()
 				if err == nil {
@@ -157,7 +157,7 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 		if len(r.channels) > 0 {
 			pubsub := re.Subscribe(r.channels...)
 			re.pubsub = pubsub
-			Go(func() {
+			goForRedis(func() {
 				for IsRuning() {
 					msg, err := pubsub.ReceiveMessage()
 					if err == nil {

@@ -16,6 +16,7 @@ type Statis struct {
 var statis = Statis{}
 var waitAll sync.WaitGroup //等待所有goroutine
 var waitAllForLog sync.WaitGroup
+var waitAllForRedis sync.WaitGroup
 
 var stopForLog int32 //
 var stop int32       //停止标志
