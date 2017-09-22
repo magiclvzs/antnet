@@ -41,6 +41,34 @@ func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, 
 	return str, nil
 }
 
+func (r *Redis) ScriptStrArray(cmd int, keys []string, args ...interface{}) ([]string, error) {
+	data, err := r.Script(cmd, keys, args...)
+	if err != nil {
+		LogError("redis script failed err:%v", err)
+		return nil, ErrDBErr
+	}
+	errcode, ok := data.(int64)
+	if ok {
+		return nil, GetError(uint16(errcode))
+	}
+
+	iArray, ok := data.([]interface{})
+	if !ok {
+		return nil, ErrDBDataType
+	}
+
+	strArray := []string{}
+	for _, v := range iArray {
+		if str, ok := v.(string); ok {
+			strArray = append(strArray, str)
+		} else {
+			return nil, ErrDBDataType
+		}
+	}
+
+	return strArray, nil
+}
+
 func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64, error) {
 	data, err := r.Script(cmd, keys, args...)
 	if err != nil {

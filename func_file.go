@@ -30,6 +30,10 @@ func ReadFile(path string) ([]byte, error) {
 	return data, nil
 }
 
+func WriteFile(path string, data []byte) {
+	ioutil.WriteFile(path, data, 0777)
+}
+
 func GetFiles(path string) []string {
 	files := []string{}
 	filepath.Walk(path, func(path string, f os.FileInfo, err error) error {

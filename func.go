@@ -38,11 +38,9 @@ func Stop() {
 		delete(stopMap, k)
 	}
 	stopMapLock.Unlock()
-
 	stopChan <- nil
-
-	LogInfo("Server Stop")
 	waitAll.Wait()
+	LogInfo("Server Stop")
 }
 
 func IsStop() bool {
