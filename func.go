@@ -244,7 +244,7 @@ func WaitForSystemExit(atexit ...func()) {
 	waitAllForLog.Wait()
 }
 
-func Daemon(skip []string) {
+func Daemon(skip ...string) {
 	if os.Getppid() != 1 {
 		filePath, _ := filepath.Abs(os.Args[0])
 		newCmd := []string{}

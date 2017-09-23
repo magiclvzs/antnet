@@ -4,6 +4,14 @@ import (
 	"time"
 )
 
+func ParseTime(str string) (time.Time, error) {
+	return time.Parse("2006-01-02 15:04:05", str)
+}
+
+func UnixTime(sec, nsec int64) time.Time {
+	return time.Unix(sec, nsec)
+}
+
 func Sleep(ms int) {
 	time.Sleep(time.Millisecond * time.Duration(ms))
 }
