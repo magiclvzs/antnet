@@ -16,7 +16,7 @@ func Go(fn func()) {
 	go func() {
 		Try(fn, nil)
 		waitAll.Done()
-		c = atomic.AddInt32(&gocount, ^int32(0))
+		c = atomic.AddInt32(&gocount, -1)
 
 		if DefLog.Level() <= LogLevelDebug {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
@@ -53,7 +53,7 @@ func Go2(fn func(cstop chan struct{})) bool {
 		stopMapLock.Unlock()
 
 		waitAll.Done()
-		c = atomic.AddInt32(&gocount, ^int32(0))
+		c = atomic.AddInt32(&gocount, -1)
 		if DefLog.Level() <= LogLevelDebug {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
@@ -75,7 +75,7 @@ func GoArgs(fn func(...interface{}), args ...interface{}) {
 		Try(func() { fn(args...) }, nil)
 
 		waitAll.Done()
-		c = atomic.AddInt32(&gocount, ^int32(0))
+		c = atomic.AddInt32(&gocount, -1)
 		if DefLog.Level() <= LogLevelDebug {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
@@ -94,7 +94,7 @@ func goForRedis(fn func()) {
 	go func() {
 		Try(fn, nil)
 		waitAllForRedis.Done()
-		c = atomic.AddInt32(&gocount, ^int32(0))
+		c = atomic.AddInt32(&gocount, -1)
 
 		if DefLog.Level() <= LogLevelDebug {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
