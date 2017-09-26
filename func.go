@@ -16,6 +16,28 @@ import (
 	"time"
 )
 
+func AddStopCheck(cs string) uint64 {
+	id := atomic.AddUint64(&stopCheckIndex, 1)
+	stopCheckMap.Lock()
+	stopCheckMap.M[id] = cs
+	stopCheckMap.Unlock()
+	return id
+}
+
+func AddStopCheckInt(ci int64) uint64 {
+	id := atomic.AddUint64(&stopCheckIndex, 1)
+	stopCheckMap.Lock()
+	stopCheckMap.IM[id] = ci
+	stopCheckMap.Unlock()
+	return id
+}
+
+func RemoveStopCheck(id uint64) {
+	stopCheckMap.Lock()
+	delete(stopCheckMap.M, id)
+	stopCheckMap.Unlock()
+}
+
 func Stop() {
 	if !atomic.CompareAndSwapInt32(&stop, 0, 1) {
 		return
@@ -32,7 +54,22 @@ func Stop() {
 	}
 	stopMapLock.Unlock()
 	stopChan <- nil
-	waitAll.Wait()
+
+	for sc := 0; !waitAll.TryWait(); sc++ {
+		Sleep(1)
+		if sc >= 3000 {
+			stopCheckMap.Lock()
+			for _, v := range stopCheckMap.M {
+				LogError("Server Stop Timeout:%v", v)
+			}
+			for _, v := range stopCheckMap.IM {
+				LogError("Server Stop Timeout:%v", v)
+			}
+			stopCheckMap.Unlock()
+			sc = 0
+		}
+	}
+
 	LogInfo("Server Stop")
 }
 

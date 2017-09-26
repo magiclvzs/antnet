@@ -4,6 +4,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,8 +14,30 @@ type Statis struct {
 	StartTime   time.Time
 }
 
+type WaitGroup struct {
+	count int64
+}
+
+func (r *WaitGroup) Add(delta int) {
+	atomic.AddInt64(&r.count, int64(delta))
+}
+
+func (r *WaitGroup) Done() {
+	atomic.AddInt64(&r.count, -1)
+}
+
+func (r *WaitGroup) Wait() {
+	for atomic.LoadInt64(&r.count) > 0 {
+		Sleep(1)
+	}
+}
+
+func (r *WaitGroup) TryWait() bool {
+	return atomic.LoadInt64(&r.count) == 0
+}
+
 var statis = Statis{}
-var waitAll sync.WaitGroup //等待所有goroutine
+var waitAll = &WaitGroup{} //等待所有goroutine
 var waitAllForLog sync.WaitGroup
 var waitAllForRedis sync.WaitGroup
 
@@ -41,6 +64,13 @@ var StartTick int64 = 0
 var NowTick int64 = 0
 var Timestamp int64 = 0
 var TimeNanoStamp int64 = 0
+var stopCheckIndex uint64 = 0
+
+var stopCheckMap = struct {
+	sync.Mutex
+	M  map[uint64]string
+	IM map[uint64]int64
+}{M: map[uint64]string{}, IM: map[uint64]int64{}}
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
