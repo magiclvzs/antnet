@@ -12,6 +12,14 @@ func UnixTime(sec, nsec int64) time.Time {
 	return time.Unix(sec, nsec)
 }
 
+func UnixMs() int64 {
+	return time.Now().UnixNano() / 1000000
+}
+
+func Now() time.Time {
+	return time.Now()
+}
+
 func Sleep(ms int) {
 	time.Sleep(time.Millisecond * time.Duration(ms))
 }

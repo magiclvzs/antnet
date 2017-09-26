@@ -322,3 +322,16 @@ func LogFatal(v ...interface{}) {
 func LogWarn(v ...interface{}) {
 	DefLog.Warn(v...)
 }
+
+func LogStack() {
+	buf := make([]byte, 1<<12)
+	LogError(string(buf[:runtime.Stack(buf, false)]))
+}
+
+func LogSimpleStack() string {
+	_, file, line, _ := runtime.Caller(2)
+	i := strings.LastIndex(file, "/") + 1
+	i = strings.LastIndex((string)(([]byte(file))[:i-1]), "/") + 1
+
+	return Sprintf("%s:%d", (string)(([]byte(file))[i:]), line)
+}
