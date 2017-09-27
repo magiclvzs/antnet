@@ -18,6 +18,9 @@ import (
 
 func AddStopCheck(cs string) uint64 {
 	id := atomic.AddUint64(&stopCheckIndex, 1)
+	if id == 0 {
+		id = atomic.AddUint64(&stopCheckIndex, 1)
+	}
 	stopCheckMap.Lock()
 	stopCheckMap.M[id] = cs
 	stopCheckMap.Unlock()
@@ -58,12 +61,13 @@ func Stop() {
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)
 		if sc >= 3000 {
+			LogError("Server Stop Timeout")
 			stopCheckMap.Lock()
 			for _, v := range stopCheckMap.M {
-				LogError("Server Stop Timeout:%v", v)
+				LogError("Server Stop Timeout CS:%v", v)
 			}
 			for _, v := range stopCheckMap.IM {
-				LogError("Server Stop Timeout:%v", v)
+				LogError("Server Stop Timeout CI:%v", v)
 			}
 			stopCheckMap.Unlock()
 			sc = 0
