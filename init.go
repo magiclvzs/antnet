@@ -12,6 +12,8 @@ type Statis struct {
 	GoCount     int
 	MsgqueCount int
 	StartTime   time.Time
+	LastPanic   int
+	PanicCount  int32
 }
 
 type WaitGroup struct {

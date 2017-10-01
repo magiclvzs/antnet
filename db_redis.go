@@ -146,7 +146,7 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 			for IsRuning() {
 				msg, err := pubsub.ReceiveMessage()
 				if err == nil {
-					fun(msg.Channel, msg.Payload)
+					Try(func() { fun(msg.Channel, msg.Payload) }, nil)
 				} else if _, ok := err.(net.Error); !ok {
 					break
 				}

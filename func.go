@@ -205,6 +205,8 @@ func Try(fun func(), handler func(interface{})) {
 			} else {
 				handler(err)
 			}
+			atomic.AddInt32(&statis.PanicCount, 1)
+			statis.LastPanic = int(Timestamp)
 		}
 	}()
 	fun()
