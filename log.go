@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 	"sync/atomic"
-	"time"
 )
 
 type ILogger interface {
@@ -59,7 +58,7 @@ func (r *FileLogger) Write(str string) {
 	if r.MaxSize > 0 && newsize >= r.MaxSize {
 		r.file.Close()
 		r.file = nil
-		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%d", Timestamp) + r.extname
+		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%v", Date()) + r.extname
 		os.Rename(r.Path, newpath)
 		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 		if err == nil {
@@ -155,7 +154,7 @@ func (r *Log) start() {
 				if ok {
 					c.file.Close()
 					c.file = nil
-					newpath := c.dirname + "/" + c.filename + fmt.Sprintf("_%d", Timestamp) + c.extname
+					newpath := c.dirname + "/" + c.filename + fmt.Sprintf("_%v", Date()) + c.extname
 					os.Rename(c.Path, newpath)
 					file, err := os.OpenFile(c.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 					if err == nil {
@@ -241,7 +240,7 @@ func (r *Log) write(levstr string, v ...interface{}) {
 	_, file, line, ok := runtime.Caller(3)
 	if ok {
 		i := strings.LastIndex(file, "/") + 1
-		prefix = fmt.Sprintf("[%s][%s][%s:%d]:", levstr, time.Now().Format("2006-01-02 15:04:05"), (string)(([]byte(file))[i:]), line)
+		prefix = fmt.Sprintf("[%s][%s][%s:%d]:", levstr, Date(), (string)(([]byte(file))[i:]), line)
 	}
 	if len(v) > 1 {
 		r.cwrite <- prefix + fmt.Sprintf(v[0].(string), v[1:]...)

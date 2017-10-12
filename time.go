@@ -8,6 +8,10 @@ func ParseTime(str string) (time.Time, error) {
 	return time.Parse("2006-01-02 15:04:05", str)
 }
 
+func Date() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
 func UnixTime(sec, nsec int64) time.Time {
 	return time.Unix(sec, nsec)
 }

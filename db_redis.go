@@ -239,3 +239,10 @@ func NewRedisManager(conf *RedisConfig) *RedisManager {
 	redisManagers = append(redisManagers, redisManager)
 	return redisManager
 }
+
+func RedisError(err error) bool {
+	if err == redis.Nil {
+		return false
+	}
+	return err != nil
+}
