@@ -25,10 +25,10 @@ type cmdParseNode struct {
 	prev    *cmdParseNode
 }
 type cmdParser struct {
-	factory *Parser
-	node    *cmdParseNode
-	values  []interface{}
-	match   CmdMatchType
+	*Parser
+	node   *cmdParseNode
+	values []interface{}
+	match  CmdMatchType
 }
 
 func (r *cmdParser) ParseC2S(msg *Message) (IMsgParser, error) {
@@ -59,15 +59,18 @@ func (r *cmdParser) GetRemindMsg(err error, t MsgType) *Message {
 		return nil
 	}
 }
+
 func (r *cmdParser) GetType() ParserType {
-	return r.factory.Type
+	return r.Type
 }
+
 func (r *cmdParser) GetErrType() ParseErrType {
-	return r.factory.ErrType
+	return r.ErrType
 }
+
 func (r *cmdParser) parserString(s string) (IMsgParser, bool) {
 	if r.node == nil {
-		r.node = r.factory.cmdRoot
+		r.node = r.cmdRoot
 	}
 	s = strings.TrimSpace(s)
 	cmds := strings.Split(s, " ")
@@ -104,7 +107,7 @@ func (r *cmdParser) parserString(s string) (IMsgParser, bool) {
 			if r.node.match == CmdMatchTypeKV {
 				ins.Field(r.node.index).Set(reflect.ValueOf(r.values[i-1]))
 				i--
-			} else if r.node.kind == reflect.String && r.node != r.factory.cmdRoot {
+			} else if r.node.kind == reflect.String && r.node != r.cmdRoot {
 				ins.Field(r.node.index).SetString(r.node.name)
 			}
 			r.node = r.node.prev

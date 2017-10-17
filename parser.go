@@ -1,7 +1,10 @@
 package antnet
 
 import (
+	"encoding/json"
 	"reflect"
+
+	"github.com/vmihailenco/msgpack"
 )
 
 type IMsgParser interface {
@@ -54,10 +57,9 @@ func (r *MsgParser) S2CString() string {
 type ParserType int
 
 const (
-	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
-	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
-	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
-	ParserTypeRaw                    //不做任何解析
+	ParserTypePB  ParserType = iota //protobuf类型，用于和客户端交互
+	ParserTypeCmd                   //cmd类型，类似telnet指令，用于直接和程序交互
+	ParserTypeRaw                   //不做任何解析
 )
 
 type ParseErrType int
@@ -85,7 +87,6 @@ type Parser struct {
 
 	msgMap  map[int]MsgParser
 	cmdRoot *cmdParseNode
-	jsonMap map[string]*jsonParseNode
 	parser  IParser
 }
 
@@ -93,14 +94,10 @@ func (r *Parser) Get() IParser {
 	switch r.Type {
 	case ParserTypePB:
 		if r.parser == nil {
-			r.parser = &pBParser{r}
-		}
-	case ParserTypeJson:
-		if r.parser == nil {
-			r.parser = &jsonParser{r}
+			r.parser = &pBParser{Parser: r}
 		}
 	case ParserTypeCmd:
-		return &cmdParser{factory: r}
+		return &cmdParser{Parser: r}
 	case ParserTypeRaw:
 		return nil
 	}
@@ -134,25 +131,15 @@ func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
 			return reflect.New(s2cType).Interface()
 		}
 	}
-	if c2s != nil || s2c != nil {
-		r.msgMap[CmdAct(cmd, act)] = p
-	}
+
+	r.msgMap[CmdAct(cmd, act)] = p
 }
 
 func (r *Parser) RegisterMsgFunc(c2sFunc ParseFunc, s2cFunc ParseFunc) {
-	if r.Type == ParserTypeCmd {
-		if r.cmdRoot == nil {
-			r.cmdRoot = &cmdParseNode{}
-		}
-		registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
+	if r.cmdRoot == nil {
+		r.cmdRoot = &cmdParseNode{}
 	}
-
-	if r.Type == ParserTypeJson {
-		if r.jsonMap == nil {
-			r.jsonMap = map[string]*jsonParseNode{}
-		}
-		registerJsonParser(r.jsonMap, c2sFunc, s2cFunc)
-	}
+	registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
 }
 
 func (r *Parser) RegisterMsg(c2s interface{}, s2c interface{}) {
@@ -171,17 +158,44 @@ func (r *Parser) RegisterMsg(c2s interface{}, s2c interface{}) {
 		}
 	}
 
-	if r.Type == ParserTypeCmd {
-		if r.cmdRoot == nil {
-			r.cmdRoot = &cmdParseNode{}
-		}
-		registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
+	if r.cmdRoot == nil {
+		r.cmdRoot = &cmdParseNode{}
+	}
+	registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
+}
+
+func JsonUnPack(data []byte, msg interface{}) error {
+	if data == nil || msg == nil {
+		return ErrJsonUnPack
 	}
 
-	if r.Type == ParserTypeJson {
-		if r.jsonMap == nil {
-			r.jsonMap = map[string]*jsonParseNode{}
-		}
-		registerJsonParser(r.jsonMap, c2sFunc, s2cFunc)
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return ErrJsonUnPack
 	}
+	return nil
+}
+
+func JsonPack(msg interface{}) ([]byte, error) {
+	if msg == nil {
+		return nil, ErrJsonPack
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		LogInfo("")
+		return nil, ErrJsonPack
+	}
+
+	return data, nil
+}
+
+func MsgPackUnPack(data []byte, msg interface{}) error {
+	err := msgpack.Unmarshal(data, msg)
+	return err
+}
+
+func MsgPackPack(msg interface{}) ([]byte, error) {
+	data, err := msgpack.Marshal(msg)
+	return data, err
 }

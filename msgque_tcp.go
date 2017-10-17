@@ -85,7 +85,7 @@ func (r *tcpMsgQue) readMsg() {
 			_, err := io.ReadFull(r.conn, headData)
 			if err != nil {
 				if err != io.EOF {
-					LogError("msgque:%v recv data err:%v", r.id, err)
+					LogDebug("msgque:%v recv data err:%v", r.id, err)
 				}
 				break
 			}

@@ -5,14 +5,14 @@ import (
 )
 
 type pBParser struct {
-	factory *Parser
+	*Parser
 }
 
 func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrPBUnPack
 	}
-	p, ok := r.factory.msgMap[msg.Head.CmdAct()]
+	p, ok := r.msgMap[msg.Head.CmdAct()]
 	if ok {
 		if p.C2S() != nil {
 			err := PBUnPack(msg.Data, p.C2S())
@@ -20,6 +20,8 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 				return nil, err
 			}
 			p.parser = r
+			return &p, nil
+		} else {
 			return &p, nil
 		}
 	}
@@ -31,6 +33,7 @@ func (r *pBParser) PackMsg(v interface{}) []byte {
 	data, _ := PBPack(v)
 	return data
 }
+
 func (r *pBParser) GetRemindMsg(err error, t MsgType) *Message {
 	if t == MsgTypeMsg {
 		return NewErrMsg(err)
@@ -38,12 +41,15 @@ func (r *pBParser) GetRemindMsg(err error, t MsgType) *Message {
 		return NewStrMsg(err.Error() + "\n")
 	}
 }
+
 func (r *pBParser) GetType() ParserType {
-	return r.factory.Type
+	return r.Type
 }
+
 func (r *pBParser) GetErrType() ParseErrType {
-	return r.factory.ErrType
+	return r.ErrType
 }
+
 func PBUnPack(data []byte, msg interface{}) error {
 	if data == nil || msg == nil {
 		return ErrPBUnPack
