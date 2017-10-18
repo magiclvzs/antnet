@@ -60,14 +60,6 @@ func (r *cmdParser) GetRemindMsg(err error, t MsgType) *Message {
 	}
 }
 
-func (r *cmdParser) GetType() ParserType {
-	return r.Type
-}
-
-func (r *cmdParser) GetErrType() ParseErrType {
-	return r.ErrType
-}
-
 func (r *cmdParser) parserString(s string) (IMsgParser, bool) {
 	if r.node == nil {
 		r.node = r.cmdRoot

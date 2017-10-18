@@ -42,14 +42,6 @@ func (r *pBParser) GetRemindMsg(err error, t MsgType) *Message {
 	}
 }
 
-func (r *pBParser) GetType() ParserType {
-	return r.Type
-}
-
-func (r *pBParser) GetErrType() ParseErrType {
-	return r.ErrType
-}
-
 func PBUnPack(data []byte, msg interface{}) error {
 	if data == nil || msg == nil {
 		return ErrPBUnPack

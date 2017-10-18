@@ -105,6 +105,14 @@ func (r *Parser) Get() IParser {
 	return r.parser
 }
 
+func (r *Parser) GetType() ParserType {
+	return r.Type
+}
+
+func (r *Parser) GetErrType() ParseErrType {
+	return r.ErrType
+}
+
 func (r *Parser) RegisterFunc(cmd, act uint8, c2sFunc ParseFunc, s2cFunc ParseFunc) {
 	if r.msgMap == nil {
 		r.msgMap = map[int]MsgParser{}
