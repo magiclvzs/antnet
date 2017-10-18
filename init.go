@@ -66,6 +66,8 @@ var StartTick int64 = 0
 var NowTick int64 = 0
 var Timestamp int64 = 0
 var TimeNanoStamp int64 = 0
+var UdpServerGoCnt int = 32
+
 var stopCheckIndex uint64 = 0
 
 var stopCheckMap = struct {

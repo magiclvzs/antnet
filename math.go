@@ -10,6 +10,11 @@ func Pow(x, y float64) float64 {
 	return math.Pow(x, y)
 }
 
+//返回x的二次方根
+func Sqrt(x float64) float64 {
+	return math.Sqrt(x)
+}
+
 //利用时间取number区间的随机值
 func RandNumber(number int) int {
 	return rand.Intn(number)

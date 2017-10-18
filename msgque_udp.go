@@ -13,6 +13,7 @@ type udpMsgQue struct {
 	cread    chan []byte  //写入通道
 	addr     *net.UDPAddr
 	lastTick int64
+	sync.Mutex
 }
 
 func (r *udpMsgQue) GetNetType() NetType {
@@ -174,10 +175,12 @@ func (r *udpMsgQue) sendRead(data []byte, n int) (re bool) {
 var udpMap map[string]*udpMsgQue = map[string]*udpMsgQue{}
 var udpMapLock sync.Mutex
 
-func (r *udpMsgQue) listen() {
-	data := make([]byte, 1<<22)
+func (r *udpMsgQue) listenTrue() {
+	data := make([]byte, 1<<16)
 	for !r.IsStop() {
+		r.Lock()
 		n, addr, err := r.conn.ReadFromUDP(data)
+		r.Unlock()
 		if err != nil {
 			if err.(net.Error).Timeout() {
 				continue
@@ -201,9 +204,16 @@ func (r *udpMsgQue) listen() {
 			LogError("drop msg because msgque full msgqueid:%v", msgque.id)
 		}
 	}
+}
 
+func (r *udpMsgQue) listen() {
+	for i := 0; i < UdpServerGoCnt; i++ {
+		Go(func() {
+			r.listenTrue()
+		})
+	}
+	r.listenTrue()
 	r.Stop()
-	r.conn.Close()
 }
 
 func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr *net.UDPAddr) *udpMsgQue {
