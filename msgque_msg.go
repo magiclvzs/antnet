@@ -3,8 +3,8 @@ package antnet
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
+	"unsafe"
 )
 
 const (
@@ -46,6 +46,9 @@ func (r *MessageHead) Bytes() []byte {
 }
 
 func (r *MessageHead) FromBytes(data []byte) error {
+	if len(data) < MsgHeadSize {
+		return ErrMsgLenTooShort
+	}
 	buf := bytes.NewBuffer(data)
 	typ := binary.LittleEndian
 	binary.Read(buf, typ, &r.Len)
@@ -55,7 +58,7 @@ func (r *MessageHead) FromBytes(data []byte) error {
 	binary.Read(buf, typ, &r.Index)
 	binary.Read(buf, typ, &r.Flags)
 	if r.Len > MaxMsgDataSize {
-		return errors.New("head len too big")
+		return ErrMsgLenTooLong
 	}
 	return nil
 }
@@ -73,11 +76,23 @@ func (r *MessageHead) String() string {
 }
 
 func NewMessageHead(data []byte) *MessageHead {
-	head := MessageHead{}
+	head := &MessageHead{}
 	if err := head.FromBytes(data); err != nil {
 		return nil
 	}
-	return &head
+	return head
+}
+
+func MessageHeadFromByte(data []byte) *MessageHead {
+	if len(data) < MsgHeadSize {
+		return nil
+	}
+	phead := new(*MessageHead)
+	*phead = (*MessageHead)(unsafe.Pointer(&data[0]))
+	if (*phead).Len > MaxMsgDataSize {
+		return nil
+	}
+	return *phead
 }
 
 type Message struct {

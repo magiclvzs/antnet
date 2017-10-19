@@ -80,11 +80,11 @@ func (r *udpMsgQue) read() {
 			break
 		}
 		var msg *Message
-		var head *MessageHead
 		if r.msgTyp == MsgTypeCmd {
 			msg = &Message{Data: data}
 		} else {
-			if head = NewMessageHead(data); head == nil {
+			head := MessageHeadFromByte(data)
+			if head == nil {
 				break
 			}
 			if head.Len > 0 {
