@@ -54,7 +54,6 @@ func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
 }
 
 func timerTick() {
-	TimeNanoStamp = time.Now().UnixNano()
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
@@ -63,7 +62,6 @@ func timerTick() {
 			Sleep(1)
 			NowTick = time.Now().UnixNano() / 1000000
 			Timestamp = NowTick / 1000
-			TimeNanoStamp = time.Now().UnixNano()
 		}
 	})
 }
