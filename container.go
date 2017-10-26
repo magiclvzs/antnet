@@ -66,6 +66,21 @@ func (r *Heap) Update(value, priority int) {
 	}
 }
 
+func (r *Heap) GetMin() (priority int, value int) {
+	n := len(r.p.s)
+	it := r.p.s[n-1]
+	return it.priority, it.value
+}
+
+func (r *Heap) GetMax() (priority int, value int) {
+	return r.GetMin()
+}
+
+func (r *Heap) GetPriority(value int) (priority int, find bool) {
+	it, ok := r.p.m[value]
+	return it.priority, ok
+}
+
 func (r *Heap) Len() int {
 	return len(r.p.m)
 }

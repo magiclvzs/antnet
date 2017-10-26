@@ -3,6 +3,7 @@ package antnet
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -10,6 +11,53 @@ import (
 	"os"
 	"strings"
 )
+
+func HttpGetWithBasicAuth(url, name, passwd string) (string, error, *http.Response) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+	req.SetBasicAuth(name, passwd)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+	resp.Body.Close()
+	return string(body), nil, resp
+}
+
+func HttpGet(url string) (string, error, *http.Response) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", ErrHttpRequest, resp
+	}
+	resp.Body.Close()
+	return string(body), nil, resp
+}
+
+func HttpPost(url, form string) (string, error, *http.Response) {
+	resp, err := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(form))
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", ErrHttpRequest, resp
+	}
+	resp.Body.Close()
+	return string(body), nil, resp
+}
 
 func HttpUpload(url, field, file string) (*http.Response, error) {
 	buf := new(bytes.Buffer)
