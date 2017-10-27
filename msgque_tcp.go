@@ -144,7 +144,7 @@ func (r *tcpMsgQue) writeMsg() {
 
 			if writeCount >= MsgHeadSize && m.Data != nil {
 				n, err := r.conn.Write(m.Data[writeCount-MsgHeadSize : int(m.Head.Len)])
-				if err == io.EOF {
+				if err != nil {
 					LogError("msgque write id:%v err:%v", r.id, err)
 					break
 				}
