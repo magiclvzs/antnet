@@ -76,6 +76,7 @@ type msgQue struct {
 	timeout       int //传输超时
 
 	init         bool
+	available  	 bool
 	callback     map[int]chan *Message
 	user         interface{}
 	callbackLock sync.Mutex
@@ -85,6 +86,10 @@ func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
 }
 
+func (r *msgQue) Available() bool {
+	return r.available
+}
+
 func (r *msgQue) GetUser() interface{} {
 	return r.user
 }
@@ -92,9 +97,7 @@ func (r *msgQue) GetUser() interface{} {
 func (r *msgQue) GetHandler() IMsgHandler {
 	return r.handler
 }
-func (r *msgQue) Available() bool {
-	return true
-}
+
 func (r *msgQue) GetMsgType() MsgType {
 	return r.msgTyp
 }

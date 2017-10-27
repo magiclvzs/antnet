@@ -15,7 +15,6 @@ type tcpMsgQue struct {
 	listener   net.Listener //监听
 	network    string
 	address    string
-	available  bool
 	wait       sync.WaitGroup
 	connecting int32
 }
@@ -41,10 +40,6 @@ func (r *tcpMsgQue) Stop() {
 
 		r.BaseStop()
 	}
-}
-
-func (r *tcpMsgQue) Available() bool {
-	return r.available
 }
 
 func (r *tcpMsgQue) IsStop() bool {

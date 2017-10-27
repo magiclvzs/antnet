@@ -19,8 +19,10 @@ type udpMsgQue struct {
 func (r *udpMsgQue) GetNetType() NetType {
 	return NetTypeUdp
 }
+
 func (r *udpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
+		r.available = false
 		if r.init {
 			r.handler.OnDelMsgQue(r)
 		}
@@ -223,6 +225,7 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			cwrite:        make(chan *Message, 64),
 			msgTyp:        msgtyp,
 			handler:       handler,
+			available:     true,
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeAccept,
 			parserFactory: parser,
@@ -260,6 +263,7 @@ func newUdpListen(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			id:            atomic.AddUint32(&msgQueId, 1),
 			msgTyp:        msgtyp,
 			handler:       handler,
+			available:     true,
 			parserFactory: parser,
 			connTyp:       ConnTypeListen,
 		},
