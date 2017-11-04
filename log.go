@@ -279,6 +279,19 @@ func (r *Log) Fatal(v ...interface{}) {
 	}
 }
 
+func (r *Log) Write(v ...interface{}) {
+	defer func() { recover() }()
+	if r.IsStop() {
+		return
+	}
+
+	if len(v) > 1 {
+		r.cwrite <- fmt.Sprintf(v[0].(string), v[1:]...)
+	} else if len(v) > 0 {
+		r.cwrite <- fmt.Sprint(v[0])
+	}
+}
+
 func NewLog(bufsize int, logger ...ILogger) *Log {
 	log := &Log{
 		bufsize:  bufsize,
