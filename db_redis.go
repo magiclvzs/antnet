@@ -146,7 +146,7 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 			for IsRuning() {
 				msg, err := pubsub.ReceiveMessage()
 				if err == nil {
-					Try(func() { fun(msg.Channel, msg.Payload) }, nil)
+					Go(func() { fun(msg.Channel, msg.Payload) })
 				} else if _, ok := err.(net.Error); !ok {
 					break
 				}
@@ -189,7 +189,7 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 				for IsRuning() {
 					msg, err := pubsub.ReceiveMessage()
 					if err == nil {
-						r.fun(msg.Channel, msg.Payload)
+						Go(func() { r.fun(msg.Channel, msg.Payload) })
 					} else if _, ok := err.(net.Error); !ok {
 						break
 					}

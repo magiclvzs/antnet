@@ -1,8 +1,6 @@
 package antnet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"unsafe"
 )
@@ -33,30 +31,44 @@ type MessageHead struct {
 }
 
 func (r *MessageHead) Bytes() []byte {
-	buf := bytes.NewBuffer(nil)
-	buf.Grow(MsgHeadSize)
-	typ := binary.LittleEndian
-	binary.Write(buf, typ, r.Len)
-	binary.Write(buf, typ, r.Error)
-	binary.Write(buf, typ, r.Cmd)
-	binary.Write(buf, typ, r.Act)
-	binary.Write(buf, typ, r.Index)
-	binary.Write(buf, typ, r.Flags)
-	return buf.Bytes()
+	data := make([]byte, MsgHeadSize)
+	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	phead.Len = r.Len
+	phead.Error = r.Error
+	phead.Cmd = r.Cmd
+	phead.Act = r.Act
+	phead.Index = r.Index
+	phead.Flags = r.Flags
+	return data
+}
+
+func (r *MessageHead) BytesWithData(wdata []byte) []byte {
+	r.Len = uint32(len(wdata))
+	data := make([]byte, MsgHeadSize+r.Len)
+	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	phead.Len = r.Len
+	phead.Error = r.Error
+	phead.Cmd = r.Cmd
+	phead.Act = r.Act
+	phead.Index = r.Index
+	phead.Flags = r.Flags
+	if wdata != nil {
+		copy(data[MsgHeadSize:], wdata)
+	}
+	return data
 }
 
 func (r *MessageHead) FromBytes(data []byte) error {
 	if len(data) < MsgHeadSize {
 		return ErrMsgLenTooShort
 	}
-	buf := bytes.NewBuffer(data)
-	typ := binary.LittleEndian
-	binary.Read(buf, typ, &r.Len)
-	binary.Read(buf, typ, &r.Error)
-	binary.Read(buf, typ, &r.Cmd)
-	binary.Read(buf, typ, &r.Act)
-	binary.Read(buf, typ, &r.Index)
-	binary.Read(buf, typ, &r.Flags)
+	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	r.Len = phead.Len
+	r.Error = phead.Error
+	r.Cmd = phead.Cmd
+	r.Act = phead.Act
+	r.Index = phead.Index
+	r.Flags = phead.Flags
 	if r.Len > MaxMsgDataSize {
 		return ErrMsgLenTooLong
 	}
@@ -114,6 +126,16 @@ func (r *Message) Tag() int {
 		return Tag(r.Head.Cmd, r.Head.Act, r.Head.Index)
 	}
 	return 0
+}
+
+func (r *Message) Bytes() []byte {
+	if r.Head != nil {
+		if r.Data != nil {
+			return r.Head.BytesWithData(r.Data)
+		}
+		return r.Head.Bytes()
+	}
+	return r.Data
 }
 
 func (r *Message) CopyTag(old *Message) *Message {

@@ -144,13 +144,8 @@ func (r *udpMsgQue) write() {
 				r.conn.WriteToUDP(m.Data, r.addr)
 			}
 		} else {
-			if m.Head != nil && m.Data != nil {
-				data := make([]byte, m.Head.Len+MsgHeadSize)
-				copy(data, m.Head.Bytes())
-				copy(data[MsgHeadSize:], m.Data)
-				r.conn.WriteToUDP(data, r.addr)
-			} else {
-				r.conn.WriteToUDP(m.Head.Bytes(), r.addr)
+			if m.Head != nil || m.Data != nil {
+				r.conn.WriteToUDP(m.Bytes(), r.addr)
 			}
 		}
 

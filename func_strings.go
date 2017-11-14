@@ -75,3 +75,11 @@ func StrToUpper(s string) string {
 func ToUpperStr(s string) string {
 	return strings.ToUpper(s)
 }
+
+func StrTrimRight(s, cutset string) string {
+	return strings.TrimRight(s, cutset)
+}
+
+func TrimRightStr(s, cutset string) string {
+	return strings.TrimRight(s, cutset)
+}
