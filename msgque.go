@@ -76,7 +76,7 @@ type msgQue struct {
 	timeout       int //传输超时
 
 	init         bool
-	available  	 bool
+	available    bool
 	callback     map[int]chan *Message
 	user         interface{}
 	callbackLock sync.Mutex
@@ -122,7 +122,7 @@ func (r *msgQue) Reconnect(t int) {
 }
 
 func (r *msgQue) Send(m *Message) (re bool) {
-	if m == nil {
+	if m == nil || !r.available {
 		return
 	}
 	defer func() {

@@ -251,25 +251,25 @@ func (r *Log) write(levstr string, v ...interface{}) {
 
 func (r *Log) Debug(v ...interface{}) {
 	if r.level <= LogLevelDebug {
-		r.write("DEBUG", v...)
+		r.write("D", v...)
 	}
 }
 
 func (r *Log) Info(v ...interface{}) {
 	if r.level <= LogLevelInfo {
-		r.write("INFO", v...)
+		r.write("I", v...)
 	}
 }
 
 func (r *Log) Warn(v ...interface{}) {
 	if r.level <= LogLevelWarn {
-		r.write("WARN", v...)
+		r.write("W", v...)
 	}
 }
 
 func (r *Log) Error(v ...interface{}) {
 	if r.level <= LogLevelError {
-		r.write("ERROR", v...)
+		r.write("E", v...)
 	}
 }
 

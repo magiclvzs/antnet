@@ -264,7 +264,8 @@ func newUdpListen(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 		},
 		conn: conn,
 	}
-
+	conn.SetReadBuffer(1 << 24)
+	conn.SetWriteBuffer(1 << 24)
 	msgqueMapSync.Lock()
 	msgqueMap[msgque.id] = &msgque
 	msgqueMapSync.Unlock()

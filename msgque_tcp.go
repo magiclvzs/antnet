@@ -280,10 +280,10 @@ func (r *tcpMsgQue) connect() {
 		r.Stop()
 	} else {
 		r.conn = c
+		r.available = true
 		LogInfo("connect to addr:%s ok msgque:%d", r.address, r.id)
 		if r.handler.OnConnectComplete(r, true) {
 			atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
-			r.available = true
 			Go(func() {
 				LogInfo("process read for msgque:%d", r.id)
 				r.read()

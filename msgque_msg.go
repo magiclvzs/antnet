@@ -28,9 +28,15 @@ type MessageHead struct {
 	Act   uint8  //动作
 	Index uint16 //序号
 	Flags uint16 //标记
+
+	forever bool
+	data    []byte
 }
 
 func (r *MessageHead) Bytes() []byte {
+	if r.forever {
+		return r.data
+	}
 	data := make([]byte, MsgHeadSize)
 	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
 	phead.Len = r.Len
@@ -183,6 +189,22 @@ func NewMsg(cmd, act uint8, index, err uint16, data []byte) *Message {
 		},
 		Data: data,
 	}
+}
+
+func NewForverMsg(cmd, act uint8, index, err uint16, data []byte) *Message {
+	msg := &Message{
+		Head: &MessageHead{
+			Len:     uint32(len(data)),
+			Error:   err,
+			Cmd:     cmd,
+			Act:     act,
+			Index:   index,
+			forever: true,
+		},
+		Data: data,
+	}
+	msg.Head.data = msg.Bytes()
+	return msg
 }
 
 func NewTagMsg(cmd, act uint8, index uint16) *Message {
