@@ -22,11 +22,10 @@ func (r *udpMsgQue) GetNetType() NetType {
 
 func (r *udpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
-		r.available = false
 		if r.init {
 			r.handler.OnDelMsgQue(r)
 		}
-
+		r.available = false
 		if r.cread != nil {
 			close(r.cread)
 		}

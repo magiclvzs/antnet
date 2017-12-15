@@ -127,6 +127,20 @@ func (r *Message) CmdAct() int {
 	return 0
 }
 
+func (r *Message) Cmd() uint8 {
+	if r.Head != nil {
+		return r.Head.Cmd
+	}
+	return 0
+}
+
+func (r *Message) Act() uint8 {
+	if r.Head != nil {
+		return r.Head.Act
+	}
+	return 0
+}
+
 func (r *Message) Tag() int {
 	if r.Head != nil {
 		return Tag(r.Head.Cmd, r.Head.Act, r.Head.Index)

@@ -24,14 +24,14 @@ func (r *tcpMsgQue) GetNetType() NetType {
 }
 func (r *tcpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
-		r.available = false
 		if r.init {
 			r.handler.OnDelMsgQue(r)
 			if r.connecting == 1 {
+				r.available = false
 				return
 			}
 		}
-
+		r.available = false
 		if r.listener != nil {
 			if tcp, ok := r.listener.(*net.TCPListener); ok {
 				tcp.Close()
