@@ -22,22 +22,24 @@ func (r *udpMsgQue) GetNetType() NetType {
 
 func (r *udpMsgQue) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
-		if r.init {
-			r.handler.OnDelMsgQue(r)
-		}
-		r.available = false
-		if r.cread != nil {
-			close(r.cread)
-		}
+		Go(func() {
+			if r.init {
+				r.handler.OnDelMsgQue(r)
+			}
+			r.available = false
+			if r.cread != nil {
+				close(r.cread)
+			}
 
-		udpMapLock.Lock()
-		delete(udpMap, r.addr.String())
-		udpMapLock.Unlock()
+			udpMapLock.Lock()
+			delete(udpMap, r.addr.String())
+			udpMapLock.Unlock()
 
-		if IsStop() && len(udpMap) == 0 && r.conn != nil {
-			r.conn.Close()
-		}
-		r.BaseStop()
+			if IsStop() && len(udpMap) == 0 && r.conn != nil {
+				r.conn.Close()
+			}
+			r.BaseStop()
+		})
 	}
 }
 
