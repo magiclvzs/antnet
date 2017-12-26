@@ -1,4 +1,5 @@
 //模型来自pb
+////特别注意，lua只至此double，int64的数据如果进行cmsgpack打包解包可能出现精度问题导致bug
 package antnet
 
 import (

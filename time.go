@@ -153,3 +153,22 @@ func IsDiffHour(now, old int64, hour, timezone int) bool {
 
 	return (GetHour23(now, timezone) >= hour) && (GetHour23(old, timezone) < hour)
 }
+
+/**
+* @brief 判断时间戳是否处于跨周, 在周一跨天节点的两边
+*
+* @param now 需要比较的时间戳
+* @param old 需要比较的时间戳
+* @param hour 小时，0-23
+* @param timezone 时区
+* @return bool true表示时间戳是否处于跨周, 在周一跨天节点的两边
+ */
+func IsDiffWeek(now, old int64, hour, timezone int) bool {
+	diffHour := IsDiffHour(now, old, hour, timezone)
+	now += int64(timezone * 3600)
+	old += int64(timezone * 3600)
+	// 使用UTC才能在本地时间采用周一作为一周的开始
+	_, nw := time.Unix(now, 0).UTC().ISOWeek()
+	_, ow := time.Unix(old, 0).UTC().ISOWeek()
+	return nw != ow && diffHour
+}

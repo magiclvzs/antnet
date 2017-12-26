@@ -222,6 +222,15 @@ func (r *msgQue) BaseStop() {
 }
 
 func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
+	if msg.Head.Flags&FlagCompress > 0 {
+		data, err := GZipUnCompress(msg.Data)
+		if err != nil {
+			LogError("msgque uncompress failed msgque:%v cmd:%v act:%v err:%v", msgque.Id(), msg.Head.Cmd, msg.Head.Act, err)
+			return false
+		}
+		msg.Data = data
+		msg.Head.Len = uint32(len(msg.Data))
+	}
 	if r.parser != nil && msg.Data != nil {
 		mp, err := r.parser.ParseC2S(msg)
 		if err == nil {

@@ -170,6 +170,15 @@ func Atoi(str string) int {
 	return i
 }
 
+func Atoi64(str string) int64 {
+	i, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		LogError("str to int64 is err:%v", err)
+		return 0
+	}
+	return i
+}
+
 func Itoa(num interface{}) string {
 	switch n := num.(type) {
 	case int8:

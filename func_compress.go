@@ -1,9 +1,10 @@
 package antnet
 
 import (
-	"compress/zlib"
 	"bytes"
-	"io"
+	"compress/gzip"
+	"compress/zlib"
+	"io/ioutil"
 )
 
 func ZlibCompress(data []byte) []byte {
@@ -14,10 +15,24 @@ func ZlibCompress(data []byte) []byte {
 	return in.Bytes()
 }
 
-func ZlibUnCompress(data []byte) []byte {
+func ZlibUnCompress(data []byte) ([]byte, error) {
 	b := bytes.NewReader(data)
-	var out bytes.Buffer
 	r, _ := zlib.NewReader(b)
-	io.Copy(&out, r)
-	return out.Bytes()
+	defer r.Close()
+	undatas, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return undatas, nil
+}
+
+func GZipUnCompress(data []byte) ([]byte, error) {
+	b := bytes.NewReader(data)
+	r, _ := gzip.NewReader(b)
+	defer r.Close()
+	undatas, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return undatas, nil
 }
