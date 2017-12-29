@@ -50,14 +50,8 @@ func Stop() {
 		v.Stop()
 	}
 
-	stopMapLock.Lock()
-	for k, v := range stopMap {
-		close(v)
-		delete(stopMap, k)
-	}
-	stopMapLock.Unlock()
+	close(stopGoChan)
 	stopChan <- nil
-
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)
 		if sc >= 3000 {

@@ -39,19 +39,7 @@ func Go2(fn func(cstop chan struct{})) bool {
 
 	go func() {
 		id := atomic.AddUint64(&goId, 1)
-		cstop := make(chan struct{})
-		stopMapLock.Lock()
-		stopMap[id] = cstop
-		stopMapLock.Unlock()
-		Try(func() { fn(cstop) }, nil)
-
-		stopMapLock.Lock()
-		if _, ok := stopMap[id]; ok {
-			close(cstop)
-			delete(stopMap, id)
-		}
-		stopMapLock.Unlock()
-
+		Try(func() { fn(stopGoChan) }, nil)
 		waitAll.Done()
 		c = atomic.AddInt32(&gocount, -1)
 		if DefLog.Level() <= LogLevelDebug {

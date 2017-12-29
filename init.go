@@ -57,7 +57,7 @@ var goId uint64
 var msgqueMap = map[uint32]IMsgQue{}
 
 var stopMap = map[uint64]chan struct{}{}
-var stopMapLock sync.Mutex
+var stopGoChan = make(chan struct{})
 var stopMapForLog = map[uint64]chan struct{}{}
 var stopMapForLogLock sync.Mutex
 
