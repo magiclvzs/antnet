@@ -51,7 +51,6 @@ func Stop() {
 	}
 
 	close(stopGoChan)
-	stopChan <- nil
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)
 		if sc >= 3000 {
@@ -69,6 +68,7 @@ func Stop() {
 	}
 
 	LogInfo("Server Stop")
+	close(stopChan)
 }
 
 func IsStop() bool {
@@ -100,15 +100,11 @@ func MD5Bytes(s []byte) string {
 
 func WaitForSystemExit(atexit ...func()) {
 	statis.StartTime = time.Now()
-	stopChan = make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt, os.Kill, syscall.SIGTERM)
-	for stop == 0 {
-		select {
-		case <-stopChan:
-			Stop()
-		}
+	select {
+	case <-stopChan:
+		Stop()
 	}
-	Stop()
 	for _, v := range atexit {
 		v()
 	}

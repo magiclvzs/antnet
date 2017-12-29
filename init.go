@@ -61,7 +61,7 @@ var stopGoChan = make(chan struct{})
 var stopMapForLog = map[uint64]chan struct{}{}
 var stopMapForLogLock sync.Mutex
 
-var stopChan chan os.Signal
+var stopChan = make(chan os.Signal, 1)
 var StartTick int64 = 0
 var NowTick int64 = 0
 var Timestamp int64 = 0
