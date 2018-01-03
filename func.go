@@ -33,6 +33,17 @@ func RemoveStopCheck(id uint64) {
 	stopCheckMap.Unlock()
 }
 
+func AtExit(fun func()) {
+	id := atomic.AddUint32(&atexitId, 1)
+	if id == 0 {
+		id = atomic.AddUint32(&atexitId, 1)
+	}
+
+	atexitMapSync.Lock()
+	atexitMap[id] = fun
+	atexitMapSync.Unlock()
+}
+
 func Stop() {
 	if !atomic.CompareAndSwapInt32(&stop, 0, 1) {
 		return
@@ -97,6 +108,11 @@ func WaitForSystemExit(atexit ...func()) {
 	for _, v := range atexit {
 		v()
 	}
+	atexitMapSync.Lock()
+	for _, v := range atexitMap {
+		v()
+	}
+	atexitMapSync.Unlock()
 	for _, v := range redisManagers {
 		v.close()
 	}

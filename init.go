@@ -55,6 +55,10 @@ var msgqueId uint32 //消息队列id
 var msgqueMapSync sync.Mutex
 var msgqueMap = map[uint32]IMsgQue{}
 
+var atexitId uint32
+var atexitMapSync sync.Mutex
+var atexitMap = map[uint32]func(){}
+
 var stopChanForGo = make(chan struct{})
 var stopChanForLog = make(chan struct{})
 var stopChanForSys = make(chan os.Signal, 1)
