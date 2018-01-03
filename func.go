@@ -27,14 +27,6 @@ func AddStopCheck(cs string) uint64 {
 	return id
 }
 
-func AddStopCheckInt(ci int64) uint64 {
-	id := atomic.AddUint64(&stopCheckIndex, 1)
-	stopCheckMap.Lock()
-	stopCheckMap.IM[id] = ci
-	stopCheckMap.Unlock()
-	return id
-}
-
 func RemoveStopCheck(id uint64) {
 	stopCheckMap.Lock()
 	delete(stopCheckMap.M, id)
@@ -57,10 +49,7 @@ func Stop() {
 			LogError("Server Stop Timeout")
 			stopCheckMap.Lock()
 			for _, v := range stopCheckMap.M {
-				LogError("Server Stop Timeout CS:%v", v)
-			}
-			for _, v := range stopCheckMap.IM {
-				LogError("Server Stop Timeout CI:%v", v)
+				LogError("Server Stop Timeout:%v", v)
 			}
 			stopCheckMap.Unlock()
 			sc = 0

@@ -68,9 +68,8 @@ var UdpServerGoCnt int = 32
 var stopCheckIndex uint64
 var stopCheckMap = struct {
 	sync.Mutex
-	M  map[uint64]string
-	IM map[uint64]int64
-}{M: map[uint64]string{}, IM: map[uint64]int64{}}
+	M map[uint64]string
+}{M: map[uint64]string{}}
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
