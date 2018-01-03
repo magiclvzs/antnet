@@ -50,7 +50,7 @@ func Stop() {
 		v.Stop()
 	}
 
-	close(stopGoChan)
+	close(stopChanForGo)
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)
 		if sc >= 3000 {
@@ -68,7 +68,7 @@ func Stop() {
 	}
 
 	LogInfo("Server Stop")
-	close(stopChan)
+	close(stopChanForSys)
 }
 
 func IsStop() bool {
@@ -100,9 +100,9 @@ func MD5Bytes(s []byte) string {
 
 func WaitForSystemExit(atexit ...func()) {
 	statis.StartTime = time.Now()
-	signal.Notify(stopChan, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(stopChanForSys, os.Interrupt, os.Kill, syscall.SIGTERM)
 	select {
-	case <-stopChan:
+	case <-stopChanForSys:
 		Stop()
 	}
 	for _, v := range atexit {
@@ -144,7 +144,7 @@ func Daemon(skip ...string) {
 func GetStatis() *Statis {
 	statis.GoCount = int(gocount)
 	statis.MsgqueCount = len(msgqueMap)
-	return &statis
+	return statis
 }
 
 func Atoi(str string) int {

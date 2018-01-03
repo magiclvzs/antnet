@@ -217,7 +217,7 @@ func (r *udpMsgQue) listen() {
 func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr *net.UDPAddr) *udpMsgQue {
 	msgque := udpMsgQue{
 		msgQue: msgQue{
-			id:            atomic.AddUint32(&msgQueId, 1),
+			id:            atomic.AddUint32(&msgqueId, 1),
 			cwrite:        make(chan *Message, 64),
 			msgTyp:        msgtyp,
 			handler:       handler,
@@ -256,7 +256,7 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 func newUdpListen(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr string) *udpMsgQue {
 	msgque := udpMsgQue{
 		msgQue: msgQue{
-			id:            atomic.AddUint32(&msgQueId, 1),
+			id:            atomic.AddUint32(&msgqueId, 1),
 			msgTyp:        msgtyp,
 			handler:       handler,
 			available:     true,

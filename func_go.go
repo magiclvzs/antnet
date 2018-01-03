@@ -38,8 +38,7 @@ func Go2(fn func(cstop chan struct{})) bool {
 	}
 
 	go func() {
-		id := atomic.AddUint64(&goId, 1)
-		Try(func() { fn(stopGoChan) }, nil)
+		Try(func() { fn(stopChanForGo) }, nil)
 		waitAll.Done()
 		c = atomic.AddInt32(&gocount, -1)
 		if DefLog.Level() <= LogLevelDebug {

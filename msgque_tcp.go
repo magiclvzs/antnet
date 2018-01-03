@@ -347,7 +347,7 @@ func (r *tcpMsgQue) Reconnect(t int) {
 func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser, user interface{}) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
-			id:            atomic.AddUint32(&msgQueId, 1),
+			id:            atomic.AddUint32(&msgqueId, 1),
 			cwrite:        make(chan *Message, 64),
 			msgTyp:        msgtyp,
 			handler:       handler,
@@ -373,7 +373,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
-			id:            atomic.AddUint32(&msgQueId, 1),
+			id:            atomic.AddUint32(&msgqueId, 1),
 			cwrite:        make(chan *Message, 64),
 			msgTyp:        msgtyp,
 			handler:       handler,
@@ -396,7 +396,7 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pa
 func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr string) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
-			id:            atomic.AddUint32(&msgQueId, 1),
+			id:            atomic.AddUint32(&msgqueId, 1),
 			msgTyp:        msgtyp,
 			handler:       handler,
 			parserFactory: parser,
