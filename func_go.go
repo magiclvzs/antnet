@@ -97,20 +97,7 @@ func goForLog(fn func(cstop chan struct{})) bool {
 	waitAllForLog.Add(1)
 
 	go func() {
-		id := atomic.AddUint64(&goId, 1)
-		cstop := make(chan struct{})
-		stopMapForLogLock.Lock()
-		stopMapForLog[id] = cstop
-		stopMapForLogLock.Unlock()
-		fn(cstop)
-
-		stopMapForLogLock.Lock()
-		if _, ok := stopMapForLog[id]; ok {
-			close(cstop)
-			delete(stopMapForLog, id)
-		}
-		stopMapForLogLock.Unlock()
-
+		fn(stopChanForLog)
 		waitAllForLog.Done()
 	}()
 	return true

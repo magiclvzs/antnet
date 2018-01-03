@@ -115,12 +115,7 @@ func WaitForSystemExit(atexit ...func()) {
 	if !atomic.CompareAndSwapInt32(&stopForLog, 0, 1) {
 		return
 	}
-	stopMapForLogLock.Lock()
-	for k, v := range stopMapForLog {
-		close(v)
-		delete(stopMapForLog, k)
-	}
-	stopMapForLogLock.Unlock()
+	close(stopChanForLog)
 	waitAllForLog.Wait()
 }
 
