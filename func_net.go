@@ -12,6 +12,20 @@ import (
 	"strings"
 )
 
+func Send(msg *Message, fun func(msgque IMsgQue) bool) {
+	if msg == nil {
+		return
+	}
+	gmsgMapSync.Lock()
+	gmsg := gmsgMap[gmsgId]
+	gmsgId++
+	gmsgMap[gmsgId] = &gMsg{c: make(chan interface{})}
+	gmsg.msg = msg
+	gmsg.fun = fun
+	close(gmsg.c)
+	gmsgMapSync.Unlock()
+}
+
 func HttpGetWithBasicAuth(url, name, passwd string) (string, error, *http.Response) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)

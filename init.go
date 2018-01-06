@@ -55,6 +55,16 @@ var msgqueId uint32 //消息队列id
 var msgqueMapSync sync.Mutex
 var msgqueMap = map[uint32]IMsgQue{}
 
+type gMsg struct {
+	c   chan interface{}
+	msg *Message
+	fun func(msgque IMsgQue) bool
+}
+
+var gmsgId uint16
+var gmsgMapSync sync.Mutex
+var gmsgMap = map[uint16]*gMsg{}
+
 var atexitId uint32
 var atexitMapSync sync.Mutex
 var atexitMap = map[uint32]func(){}
@@ -76,6 +86,7 @@ var stopCheckMap = struct {
 }{M: map[uint64]string{}}
 
 func init() {
+	gmsgMap[gmsgId] = &gMsg{c: make(chan interface{})}
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	DefLog = NewLog(10000)
 	DefLog.SetLogger(&ConsoleLogger{true}, true)

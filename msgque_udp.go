@@ -125,6 +125,13 @@ func (r *udpMsgQue) write() {
 		var m *Message = nil
 		select {
 		case m = <-r.cwrite:
+		case <-gmsgMap[r.gmsgId].c:
+			gm := gmsgMap[r.gmsgId]
+			r.gmsgId++
+			if gm.fun != nil && !gm.fun(r) {
+				continue
+			}
+			m = gm.msg
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
 			if left < r.timeout {
@@ -224,6 +231,7 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			available:     true,
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeAccept,
+			gmsgId:        gmsgId,
 			parserFactory: parser,
 		},
 		conn:     conn,

@@ -80,6 +80,7 @@ type msgQue struct {
 	callback     map[int]chan *Message
 	user         interface{}
 	callbackLock sync.Mutex
+	gmsgId       uint16
 }
 
 func (r *msgQue) SetUser(user interface{}) {

@@ -128,6 +128,14 @@ func (r *tcpMsgQue) writeMsg() {
 				if m != nil {
 					head = m.Head.Bytes()
 				}
+			case <-gmsgMap[r.gmsgId].c:
+				gm := gmsgMap[r.gmsgId]
+				r.gmsgId++
+				if gm.fun != nil && !gm.fun(r) {
+					continue
+				}
+				m = gm.msg
+				head = m.Head.Bytes()
 			}
 		}
 		if m != nil {
@@ -184,6 +192,13 @@ func (r *tcpMsgQue) writeCmd() {
 		if m == nil {
 			select {
 			case m = <-r.cwrite:
+			case <-gmsgMap[r.gmsgId].c:
+				gm := gmsgMap[r.gmsgId]
+				r.gmsgId++
+				if gm.fun != nil && !gm.fun(r) {
+					continue
+				}
+				m = gm.msg
 			}
 		}
 		if m != nil {
@@ -353,6 +368,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 			handler:       handler,
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeConn,
+			gmsgId:        gmsgId,
 			parserFactory: parser,
 			user:          user,
 		},
@@ -379,6 +395,7 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pa
 			handler:       handler,
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeAccept,
+			gmsgId:        gmsgId,
 			parserFactory: parser,
 		},
 		conn: conn,
