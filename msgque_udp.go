@@ -38,7 +38,7 @@ func (r *udpMsgQue) Stop() {
 			if IsStop() && len(udpMap) == 0 && r.conn != nil {
 				r.conn.Close()
 			}
-			r.BaseStop()
+			r.baseStop()
 		})
 	}
 }
@@ -124,6 +124,7 @@ func (r *udpMsgQue) write() {
 	for !r.IsStop() {
 		var m *Message = nil
 		select {
+		case <-stopChanForGo:
 		case m = <-r.cwrite:
 		case <-gm.c:
 			if gm.fun == nil || gm.fun(r) {

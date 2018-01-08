@@ -49,10 +49,6 @@ func Stop() {
 		return
 	}
 
-	for _, v := range msgqueMap {
-		v.Stop()
-	}
-
 	close(stopChanForGo)
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)

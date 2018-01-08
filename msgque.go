@@ -215,7 +215,7 @@ func (r *msgQue) setCallback(tag int, c chan *Message) {
 	}
 }
 
-func (r *msgQue) BaseStop() {
+func (r *msgQue) baseStop() {
 	if r.cwrite != nil {
 		close(r.cwrite)
 	}

@@ -56,7 +56,7 @@ var msgqueMapSync sync.Mutex
 var msgqueMap = map[uint32]IMsgQue{}
 
 type gMsg struct {
-	c   chan interface{}
+	c   chan struct{}
 	msg *Message
 	fun func(msgque IMsgQue) bool
 }
@@ -86,7 +86,7 @@ var stopCheckMap = struct {
 }{M: map[uint64]string{}}
 
 func init() {
-	gmsgArray[gmsgId] = &gMsg{c: make(chan interface{})}
+	gmsgArray[gmsgId] = &gMsg{c: make(chan struct{})}
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	DefLog = NewLog(10000)
 	DefLog.SetLogger(&ConsoleLogger{true}, true)

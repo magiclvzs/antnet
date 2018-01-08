@@ -33,13 +33,7 @@ func (r *tcpMsgQue) Stop() {
 				}
 			}
 			r.available = false
-			if r.listener != nil {
-				if tcp, ok := r.listener.(*net.TCPListener); ok {
-					tcp.Close()
-				}
-			}
-
-			r.BaseStop()
+			r.baseStop()
 		})
 	}
 }
@@ -125,6 +119,7 @@ func (r *tcpMsgQue) writeMsg() {
 	for !r.IsStop() || m != nil {
 		if m == nil {
 			select {
+			case <-stopChanForGo:
 			case m = <-r.cwrite:
 				if m != nil {
 					head = m.Head.Bytes()
@@ -191,6 +186,7 @@ func (r *tcpMsgQue) writeCmd() {
 	for !r.IsStop() || m != nil {
 		if m == nil {
 			select {
+			case <-stopChanForGo:
 			case m = <-r.cwrite:
 			case <-gm.c:
 				if gm.fun == nil || gm.fun(r) {
@@ -255,6 +251,12 @@ func (r *tcpMsgQue) write() {
 }
 
 func (r *tcpMsgQue) listen() {
+	Go2(func(cstop chan struct{}) {
+		select {
+		case <-cstop:
+			r.listener.Close()
+		}
+	})
 	for !r.IsStop() {
 		c, err := r.listener.Accept()
 		if err != nil {
