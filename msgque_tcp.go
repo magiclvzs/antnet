@@ -120,12 +120,9 @@ func (r *tcpMsgQue) readMsg() {
 func (r *tcpMsgQue) writeMsg() {
 	var m *Message
 	var head []byte
-	var gm *gMsg
+	gm := r.getGMsg(false)
 	writeCount := 0
 	for !r.IsStop() || m != nil {
-		if gm == nil {
-			gm = r.getGMsg()
-		}
 		if m == nil {
 			select {
 			case m = <-r.cwrite:
@@ -139,6 +136,7 @@ func (r *tcpMsgQue) writeMsg() {
 				}
 				m = gm.msg
 				head = m.Head.Bytes()
+				gm = r.getGMsg(true)
 			}
 		}
 		if m != nil {
@@ -190,12 +188,9 @@ func (r *tcpMsgQue) readCmd() {
 
 func (r *tcpMsgQue) writeCmd() {
 	var m *Message
-	var gm *gMsg
+	gm := r.getGMsg(false)
 	writeCount := 0
 	for !r.IsStop() || m != nil {
-		if gm == nil {
-			gm = r.getGMsg()
-		}
 		if m == nil {
 			select {
 			case m = <-r.cwrite:
@@ -205,6 +200,7 @@ func (r *tcpMsgQue) writeCmd() {
 					continue
 				}
 				m = gm.msg
+				gm = r.getGMsg(true)
 			}
 		}
 		if m != nil {

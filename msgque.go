@@ -87,10 +87,13 @@ func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
 }
 
-func (r *msgQue) getGMsg() *gMsg {
+func (r *msgQue) getGMsg(add bool) *gMsg {
 	gmsgMapSync.RLock()
 	gm := gmsgMap[r.gmsgId]
 	gmsgMapSync.RUnlock()
+	if add {
+		r.gmsgId++
+	}
 	return gm
 }
 

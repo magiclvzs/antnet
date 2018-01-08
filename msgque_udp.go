@@ -118,14 +118,11 @@ func (r *udpMsgQue) write() {
 		}
 		r.Stop()
 	}()
-	var gm *gMsg
+	gm := r.getGMsg(false)
 	timeouCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() {
 		var m *Message = nil
-		if gm == nil {
-			gm = r.getGMsg()
-		}
 		select {
 		case m = <-r.cwrite:
 		case <-gm.c:
@@ -134,6 +131,7 @@ func (r *udpMsgQue) write() {
 				continue
 			}
 			m = gm.msg
+			gm = r.getGMsg(true)
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
 			if left < r.timeout {
