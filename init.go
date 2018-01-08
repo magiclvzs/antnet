@@ -62,7 +62,7 @@ type gMsg struct {
 }
 
 var gmsgId uint16
-var gmsgMapSync sync.Mutex
+var gmsgMapSync sync.RWMutex
 var gmsgMap = map[uint16]*gMsg{}
 
 var atexitId uint32

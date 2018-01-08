@@ -87,6 +87,13 @@ func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
 }
 
+func (r *msgQue) getGMsg() *gMsg {
+	gmsgMapSync.RLock()
+	gm := gmsgMap[r.gmsgId]
+	gmsgMapSync.RUnlock()
+	return gm
+}
+
 func (r *msgQue) Available() bool {
 	return r.available
 }

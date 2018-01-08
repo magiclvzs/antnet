@@ -18,11 +18,11 @@ func Send(msg *Message, fun func(msgque IMsgQue) bool) {
 	}
 	gmsgMapSync.Lock()
 	gmsg := gmsgMap[gmsgId]
-	gmsgId++
-	gmsgMap[gmsgId] = &gMsg{c: make(chan interface{})}
+	gmsgMap[gmsgId+1] = &gMsg{c: make(chan interface{})}
 	gmsg.msg = msg
 	gmsg.fun = fun
 	close(gmsg.c)
+	gmsgId++
 	gmsgMapSync.Unlock()
 }
 
