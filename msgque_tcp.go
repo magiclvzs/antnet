@@ -130,12 +130,10 @@ func (r *tcpMsgQue) writeMsg() {
 					head = m.Head.Bytes()
 				}
 			case <-gm.c:
-				r.gmsgId++
-				if gm.fun != nil && !gm.fun(r) {
-					continue
+				if gm.fun == nil || gm.fun(r) {
+					m = gm.msg
+					head = m.Head.Bytes()
 				}
-				m = gm.msg
-				head = m.Head.Bytes()
 				gm = r.getGMsg(true)
 			}
 		}
@@ -195,11 +193,9 @@ func (r *tcpMsgQue) writeCmd() {
 			select {
 			case m = <-r.cwrite:
 			case <-gm.c:
-				r.gmsgId++
-				if gm.fun != nil && !gm.fun(r) {
-					continue
+				if gm.fun == nil || gm.fun(r) {
+					m = gm.msg
 				}
-				m = gm.msg
 				gm = r.getGMsg(true)
 			}
 		}

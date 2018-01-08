@@ -126,11 +126,9 @@ func (r *udpMsgQue) write() {
 		select {
 		case m = <-r.cwrite:
 		case <-gm.c:
-			r.gmsgId++
-			if gm.fun != nil && !gm.fun(r) {
-				continue
+			if gm.fun == nil || gm.fun(r) {
+				m = gm.msg
 			}
-			m = gm.msg
 			gm = r.getGMsg(true)
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
