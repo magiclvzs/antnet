@@ -62,8 +62,8 @@ type gMsg struct {
 }
 
 var gmsgId uint16
-var gmsgMapSync sync.RWMutex
-var gmsgMap = map[uint16]*gMsg{}
+var gmsgMapSync sync.Mutex
+var gmsgArray = [65536]*gMsg{}
 
 var atexitId uint32
 var atexitMapSync sync.Mutex
@@ -86,7 +86,7 @@ var stopCheckMap = struct {
 }{M: map[uint64]string{}}
 
 func init() {
-	gmsgMap[gmsgId] = &gMsg{c: make(chan interface{})}
+	gmsgArray[gmsgId] = &gMsg{c: make(chan interface{})}
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	DefLog = NewLog(10000)
 	DefLog.SetLogger(&ConsoleLogger{true}, true)
