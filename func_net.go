@@ -16,14 +16,15 @@ func Send(msg *Message, fun func(msgque IMsgQue) bool) {
 	if msg == nil {
 		return
 	}
+	c := make(chan interface{})
 	gmsgMapSync.Lock()
 	gmsg := gmsgMap[gmsgId]
-	gmsgMap[gmsgId+1] = &gMsg{c: make(chan interface{})}
+	gmsgMap[gmsgId+1] = &gMsg{c: c}
+	gmsgId++
+	gmsgMapSync.Unlock()
 	gmsg.msg = msg
 	gmsg.fun = fun
 	close(gmsg.c)
-	gmsgId++
-	gmsgMapSync.Unlock()
 }
 
 func HttpGetWithBasicAuth(url, name, passwd string) (string, error, *http.Response) {
