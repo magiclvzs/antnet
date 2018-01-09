@@ -219,13 +219,16 @@ func (r *udpMsgQue) listen() {
 			r.listenTrue()
 		})
 	}
+	c := make(chan struct{})
 	Go2(func(cstop chan struct{}) {
 		select {
 		case <-cstop:
+		case <-c:
 		}
 		r.conn.Close()
 	})
 	r.listenTrue()
+	close(c)
 	r.Stop()
 }
 
