@@ -251,15 +251,20 @@ func (r *tcpMsgQue) write() {
 }
 
 func (r *tcpMsgQue) listen() {
+	c := make(chan struct{})
 	Go2(func(cstop chan struct{}) {
 		select {
 		case <-cstop:
-			r.listener.Close()
+		case <-c:
 		}
+		r.listener.Close()
 	})
 	for !r.IsStop() {
 		c, err := r.listener.Accept()
 		if err != nil {
+			if stop == 0 && r.stop == 0 {
+				LogError("accept failed msgque:%v err:%v", r.id, err)
+			}
 			break
 		} else {
 			Go(func() {
@@ -284,6 +289,7 @@ func (r *tcpMsgQue) listen() {
 		}
 	}
 
+	close(c)
 	r.Stop()
 }
 
