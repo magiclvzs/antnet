@@ -113,7 +113,7 @@ func (r *udpMsgQue) write() {
 		}
 		r.Stop()
 	}()
-	gm := r.getGMsg(false)
+	gm := r.getGMsg()
 	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() {
@@ -124,8 +124,11 @@ func (r *udpMsgQue) write() {
 		case <-gm.c:
 			if gm.fun == nil || gm.fun(r) {
 				m = gm.msg
+				gm = r.getGMsg()
+			} else {
+				gm = r.getGMsg()
+				continue
 			}
-			gm = r.getGMsg(true)
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
 			if left < r.timeout || r.timeout == 0 {

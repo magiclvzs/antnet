@@ -88,11 +88,9 @@ func (r *msgQue) SetUser(user interface{}) {
 	r.user = user
 }
 
-func (r *msgQue) getGMsg(add bool) *gMsg {
+func (r *msgQue) getGMsg() *gMsg {
 	gm := gmsgArray[r.gmsgId]
-	if add {
-		r.gmsgId++
-	}
+	r.gmsgId++
 	return gm
 }
 

@@ -112,7 +112,7 @@ func (r *tcpMsgQue) readMsg() {
 func (r *tcpMsgQue) writeMsg() {
 	var m *Message
 	head := make([]byte, MsgHeadSize)
-	gm := r.getGMsg(false)
+	gm := r.getGMsg()
 	writeCount := 0
 	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
@@ -128,8 +128,11 @@ func (r *tcpMsgQue) writeMsg() {
 				if gm.fun == nil || gm.fun(r) {
 					m = gm.msg
 					m.Head.FastBytes(head)
+					gm = r.getGMsg()
+				} else {
+					gm = r.getGMsg()
+					continue
 				}
-				gm = r.getGMsg(true)
 			case <-tick.C:
 				left := int(Timestamp - r.lastTick)
 				if left < r.timeout || r.timeout == 0 {
@@ -195,7 +198,7 @@ func (r *tcpMsgQue) readCmd() {
 
 func (r *tcpMsgQue) writeCmd() {
 	var m *Message
-	gm := r.getGMsg(false)
+	gm := r.getGMsg()
 	writeCount := 0
 	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
@@ -207,8 +210,11 @@ func (r *tcpMsgQue) writeCmd() {
 			case <-gm.c:
 				if gm.fun == nil || gm.fun(r) {
 					m = gm.msg
+					gm = r.getGMsg()
+				} else {
+					gm = r.getGMsg()
+					continue
 				}
-				gm = r.getGMsg(true)
 			case <-tick.C:
 				left := int(Timestamp - r.lastTick)
 				if left < r.timeout || r.timeout == 0 {
