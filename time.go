@@ -24,6 +24,22 @@ func Now() time.Time {
 	return time.Now()
 }
 
+func NewTimer(ms int) *time.Timer {
+	return time.NewTimer(time.Millisecond * time.Duration(ms))
+}
+
+func NewTicker(ms int) *time.Ticker {
+	return time.NewTicker(time.Millisecond * time.Duration(ms))
+}
+
+func After(ms int) <-chan time.Time {
+	return time.After(time.Millisecond * time.Duration(ms))
+}
+
+func Tick(ms int) <-chan time.Time {
+	return time.Tick(time.Millisecond * time.Duration(ms))
+}
+
 func Sleep(ms int) {
 	time.Sleep(time.Millisecond * time.Duration(ms))
 }
