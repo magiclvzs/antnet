@@ -69,9 +69,6 @@ func (r *tcpMsgQue) readMsg() {
 	var head *MessageHead
 
 	for !r.IsStop() {
-		if r.timeout > 0 {
-			r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
-		}
 		if head == nil {
 			_, err := io.ReadFull(r.conn, headData)
 			if err != nil {
@@ -108,6 +105,7 @@ func (r *tcpMsgQue) readMsg() {
 			head = nil
 			data = nil
 		}
+		r.lastTick = Timestamp
 	}
 }
 
@@ -116,6 +114,8 @@ func (r *tcpMsgQue) writeMsg() {
 	var head []byte
 	gm := r.getGMsg(false)
 	writeCount := 0
+	timeoutCheck := false
+	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
 		if m == nil {
 			select {
@@ -130,45 +130,54 @@ func (r *tcpMsgQue) writeMsg() {
 					head = m.Head.Bytes()
 				}
 				gm = r.getGMsg(true)
+			case <-tick.C:
+				left := int(Timestamp - r.lastTick)
+				if left < r.timeout {
+					timeoutCheck = true
+					tick.Reset(time.Second * time.Duration(r.timeout-left))
+				} else {
+					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+				}
 			}
 		}
-		if m != nil {
-			if r.timeout > 0 {
-				r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
-			}
-			if writeCount < MsgHeadSize {
-				n, err := r.conn.Write(head[writeCount:])
-				if err != nil {
-					LogError("msgque write id:%v err:%v", r.id, err)
-					r.Stop()
-					break
-				}
-				writeCount += n
-			}
-
-			if writeCount >= MsgHeadSize && m.Data != nil {
-				n, err := r.conn.Write(m.Data[writeCount-MsgHeadSize : int(m.Head.Len)])
-				if err != nil {
-					LogError("msgque write id:%v err:%v", r.id, err)
-					break
-				}
-				writeCount += n
-			}
-
-			if writeCount == int(m.Head.Len)+MsgHeadSize {
-				writeCount = 0
-				m = nil
-			}
+		if timeoutCheck {
+			timeoutCheck = false
+			continue
 		}
+		if m == nil {
+			break
+		}
+
+		if writeCount < MsgHeadSize {
+			n, err := r.conn.Write(head[writeCount:])
+			if err != nil {
+				LogError("msgque write id:%v err:%v", r.id, err)
+				break
+			}
+			writeCount += n
+		}
+
+		if writeCount >= MsgHeadSize && m.Data != nil {
+			n, err := r.conn.Write(m.Data[writeCount-MsgHeadSize : int(m.Head.Len)])
+			if err != nil {
+				LogError("msgque write id:%v err:%v", r.id, err)
+				break
+			}
+			writeCount += n
+		}
+
+		if writeCount == int(m.Head.Len)+MsgHeadSize {
+			writeCount = 0
+			m = nil
+		}
+		r.lastTick = Timestamp
 	}
+	tick.Stop()
 }
 
 func (r *tcpMsgQue) readCmd() {
 	reader := bufio.NewReader(r.conn)
 	for !r.IsStop() {
-		if r.timeout > 0 {
-			r.conn.SetReadDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
-		}
 		data, err := reader.ReadBytes('\n')
 		if err != nil {
 			break
@@ -176,6 +185,7 @@ func (r *tcpMsgQue) readCmd() {
 		if !r.processMsg(r, &Message{Data: data}) {
 			break
 		}
+		r.lastTick = Timestamp
 	}
 }
 
@@ -183,6 +193,8 @@ func (r *tcpMsgQue) writeCmd() {
 	var m *Message
 	gm := r.getGMsg(false)
 	writeCount := 0
+	timeoutCheck := false
+	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
 		if m == nil {
 			select {
@@ -193,24 +205,36 @@ func (r *tcpMsgQue) writeCmd() {
 					m = gm.msg
 				}
 				gm = r.getGMsg(true)
+			case <-tick.C:
+				left := int(Timestamp - r.lastTick)
+				if left < r.timeout {
+					timeoutCheck = true
+					tick.Reset(time.Second * time.Duration(r.timeout-left))
+				} else {
+					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+				}
 			}
 		}
-		if m != nil {
-			if r.timeout > 0 {
-				r.conn.SetWriteDeadline(time.Now().Add(time.Duration(r.timeout) * time.Second))
-			}
-			n, err := r.conn.Write(m.Data[writeCount:])
-			if err != nil {
-				LogError("msgque write id:%v err:%v", r.id, err)
-				break
-			}
-			writeCount += n
-			if writeCount == len(m.Data) {
-				writeCount = 0
-				m = nil
-			}
+		if timeoutCheck {
+			timeoutCheck = false
+			continue
 		}
+		if m == nil {
+			break
+		}
+		n, err := r.conn.Write(m.Data[writeCount:])
+		if err != nil {
+			LogError("msgque write id:%v err:%v", r.id, err)
+			break
+		}
+		writeCount += n
+		if writeCount == len(m.Data) {
+			writeCount = 0
+			m = nil
+		}
+		r.lastTick = Timestamp
 	}
+	tick.Stop()
 }
 
 func (r *tcpMsgQue) read() {
@@ -376,6 +400,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 			connTyp:       ConnTypeConn,
 			gmsgId:        gmsgId,
 			parserFactory: parser,
+			lastTick:      Timestamp,
 			user:          user,
 		},
 		conn:    conn,
@@ -402,6 +427,7 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Pa
 			timeout:       DefMsgQueTimeout,
 			connTyp:       ConnTypeAccept,
 			gmsgId:        gmsgId,
+			lastTick:      Timestamp,
 			parserFactory: parser,
 		},
 		conn: conn,

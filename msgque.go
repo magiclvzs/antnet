@@ -74,6 +74,7 @@ type msgQue struct {
 	parser        IParser
 	parserFactory *Parser
 	timeout       int //传输超时
+	lastTick      int64
 
 	init         bool
 	available    bool
@@ -120,12 +121,15 @@ func (r *msgQue) Id() uint32 {
 }
 
 func (r *msgQue) SetTimeout(t int) {
-	r.timeout = t
+	if t > 0 {
+		r.timeout = t
+	}
 }
 
 func (r *msgQue) GetTimeout() int {
 	return r.timeout
 }
+
 func (r *msgQue) Reconnect(t int) {
 
 }

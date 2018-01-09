@@ -9,10 +9,9 @@ import (
 
 type udpMsgQue struct {
 	msgQue
-	conn     *net.UDPConn //连接
-	cread    chan []byte  //写入通道
-	addr     *net.UDPAddr
-	lastTick int64
+	conn  *net.UDPConn //连接
+	cread chan []byte  //写入通道
+	addr  *net.UDPAddr
 	sync.Mutex
 }
 
@@ -119,7 +118,7 @@ func (r *udpMsgQue) write() {
 		r.Stop()
 	}()
 	gm := r.getGMsg(false)
-	timeouCheck := false
+	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() {
 		var m *Message = nil
@@ -134,12 +133,14 @@ func (r *udpMsgQue) write() {
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
 			if left < r.timeout {
-				timeouCheck = true
-				tick = time.NewTimer(time.Second * time.Duration(r.timeout-left))
+				timeoutCheck = true
+				tick.Reset(time.Second * time.Duration(r.timeout-left))
+			} else {
+				LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
 			}
 		}
-		if timeouCheck {
-			timeouCheck = false
+		if timeoutCheck {
+			timeoutCheck = false
 			continue
 		}
 		if m == nil {
@@ -158,6 +159,8 @@ func (r *udpMsgQue) write() {
 
 		r.lastTick = Timestamp
 	}
+
+	tick.Stop()
 }
 
 func (r *udpMsgQue) sendRead(data []byte, n int) (re bool) {
@@ -232,11 +235,11 @@ func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser
 			connTyp:       ConnTypeAccept,
 			gmsgId:        gmsgId,
 			parserFactory: parser,
+			lastTick:      Timestamp,
 		},
-		conn:     conn,
-		cread:    make(chan []byte, 64),
-		addr:     addr,
-		lastTick: Timestamp,
+		conn:  conn,
+		cread: make(chan []byte, 64),
+		addr:  addr,
 	}
 	if parser != nil {
 		msgque.parser = parser.Get()
