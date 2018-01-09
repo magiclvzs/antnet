@@ -33,10 +33,6 @@ func (r *udpMsgQue) Stop() {
 			udpMapLock.Lock()
 			delete(udpMap, r.addr.String())
 			udpMapLock.Unlock()
-
-			if IsStop() && len(udpMap) == 0 && r.conn != nil {
-				r.conn.Close()
-			}
 			r.baseStop()
 		})
 	}
@@ -132,9 +128,13 @@ func (r *udpMsgQue) write() {
 			gm = r.getGMsg(true)
 		case <-tick.C:
 			left := int(Timestamp - r.lastTick)
-			if left < r.timeout {
+			if left < r.timeout || r.timeout == 0 {
 				timeoutCheck = true
-				tick.Reset(time.Second * time.Duration(r.timeout-left))
+				if r.timeout == 0 {
+					tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
+				} else {
+					tick.Reset(time.Second * time.Duration(r.timeout-left))
+				}
 			} else {
 				LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
 			}
@@ -219,6 +219,12 @@ func (r *udpMsgQue) listen() {
 			r.listenTrue()
 		})
 	}
+	Go2(func(cstop chan struct{}) {
+		select {
+		case <-cstop:
+		}
+		r.conn.Close()
+	})
 	r.listenTrue()
 	r.Stop()
 }

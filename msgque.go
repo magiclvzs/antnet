@@ -121,7 +121,7 @@ func (r *msgQue) Id() uint32 {
 }
 
 func (r *msgQue) SetTimeout(t int) {
-	if t > 0 {
+	if t >= 0 {
 		r.timeout = t
 	}
 }

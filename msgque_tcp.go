@@ -111,7 +111,7 @@ func (r *tcpMsgQue) readMsg() {
 
 func (r *tcpMsgQue) writeMsg() {
 	var m *Message
-	var head []byte
+	head := make([]byte, MsgHeadSize)
 	gm := r.getGMsg(false)
 	writeCount := 0
 	timeoutCheck := false
@@ -122,19 +122,23 @@ func (r *tcpMsgQue) writeMsg() {
 			case <-stopChanForGo:
 			case m = <-r.cwrite:
 				if m != nil {
-					head = m.Head.Bytes()
+					m.Head.FastBytes(head)
 				}
 			case <-gm.c:
 				if gm.fun == nil || gm.fun(r) {
 					m = gm.msg
-					head = m.Head.Bytes()
+					m.Head.FastBytes(head)
 				}
 				gm = r.getGMsg(true)
 			case <-tick.C:
 				left := int(Timestamp - r.lastTick)
-				if left < r.timeout {
+				if left < r.timeout || r.timeout == 0 {
 					timeoutCheck = true
-					tick.Reset(time.Second * time.Duration(r.timeout-left))
+					if r.timeout == 0 {
+						tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
+					} else {
+						tick.Reset(time.Second * time.Duration(r.timeout-left))
+					}
 				} else {
 					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
 				}
@@ -207,9 +211,13 @@ func (r *tcpMsgQue) writeCmd() {
 				gm = r.getGMsg(true)
 			case <-tick.C:
 				left := int(Timestamp - r.lastTick)
-				if left < r.timeout {
+				if left < r.timeout || r.timeout == 0 {
 					timeoutCheck = true
-					tick.Reset(time.Second * time.Duration(r.timeout-left))
+					if r.timeout == 0 {
+						tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
+					} else {
+						tick.Reset(time.Second * time.Duration(r.timeout-left))
+					}
 				} else {
 					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
 				}

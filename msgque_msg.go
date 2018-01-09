@@ -48,6 +48,17 @@ func (r *MessageHead) Bytes() []byte {
 	return data
 }
 
+func (r *MessageHead) FastBytes(data []byte) []byte {
+	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	phead.Len = r.Len
+	phead.Error = r.Error
+	phead.Cmd = r.Cmd
+	phead.Act = r.Act
+	phead.Index = r.Index
+	phead.Flags = r.Flags
+	return data
+}
+
 func (r *MessageHead) BytesWithData(wdata []byte) []byte {
 	r.Len = uint32(len(wdata))
 	data := make([]byte, MsgHeadSize+r.Len)
