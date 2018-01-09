@@ -114,7 +114,6 @@ func (r *tcpMsgQue) writeMsg() {
 	head := make([]byte, MsgHeadSize)
 	gm := r.getGMsg()
 	writeCount := 0
-	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
 		if m == nil {
@@ -134,23 +133,12 @@ func (r *tcpMsgQue) writeMsg() {
 					continue
 				}
 			case <-tick.C:
-				left := int(Timestamp - r.lastTick)
-				if left < r.timeout || r.timeout == 0 {
-					timeoutCheck = true
-					if r.timeout == 0 {
-						tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
-					} else {
-						tick.Reset(time.Second * time.Duration(r.timeout-left))
-					}
-				} else {
-					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+				if r.checkTimeout(tick) {
+					continue
 				}
 			}
 		}
-		if timeoutCheck {
-			timeoutCheck = false
-			continue
-		}
+
 		if m == nil {
 			break
 		}
@@ -200,7 +188,6 @@ func (r *tcpMsgQue) writeCmd() {
 	var m *Message
 	gm := r.getGMsg()
 	writeCount := 0
-	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
 		if m == nil {
@@ -216,23 +203,12 @@ func (r *tcpMsgQue) writeCmd() {
 					continue
 				}
 			case <-tick.C:
-				left := int(Timestamp - r.lastTick)
-				if left < r.timeout || r.timeout == 0 {
-					timeoutCheck = true
-					if r.timeout == 0 {
-						tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
-					} else {
-						tick.Reset(time.Second * time.Duration(r.timeout-left))
-					}
-				} else {
-					LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+				if r.checkTimeout(tick) {
+					continue
 				}
 			}
 		}
-		if timeoutCheck {
-			timeoutCheck = false
-			continue
-		}
+
 		if m == nil {
 			break
 		}

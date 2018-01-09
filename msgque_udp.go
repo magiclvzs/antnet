@@ -114,7 +114,6 @@ func (r *udpMsgQue) write() {
 		r.Stop()
 	}()
 	gm := r.getGMsg()
-	timeoutCheck := false
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() {
 		var m *Message = nil
@@ -130,22 +129,11 @@ func (r *udpMsgQue) write() {
 				continue
 			}
 		case <-tick.C:
-			left := int(Timestamp - r.lastTick)
-			if left < r.timeout || r.timeout == 0 {
-				timeoutCheck = true
-				if r.timeout == 0 {
-					tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
-				} else {
-					tick.Reset(time.Second * time.Duration(r.timeout-left))
-				}
-			} else {
-				LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+			if r.checkTimeout(tick) {
+				continue
 			}
 		}
-		if timeoutCheck {
-			timeoutCheck = false
-			continue
-		}
+
 		if m == nil {
 			break
 		}

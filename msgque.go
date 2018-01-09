@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 )
 
 var DefMsgQueTimeout int = 180
@@ -122,6 +123,20 @@ func (r *msgQue) SetTimeout(t int) {
 	if t >= 0 {
 		r.timeout = t
 	}
+}
+
+func (r *msgQue) checkTimeout(tick *time.Timer) bool {
+	left := int(Timestamp - r.lastTick)
+	if left < r.timeout || r.timeout == 0 {
+		if r.timeout == 0 {
+			tick.Reset(time.Second * time.Duration(DefMsgQueTimeout))
+		} else {
+			tick.Reset(time.Second * time.Duration(r.timeout-left))
+		}
+		return true
+	}
+	LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
+	return false
 }
 
 func (r *msgQue) GetTimeout() int {
