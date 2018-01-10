@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 )
 
 func PathBase(p string) string {
@@ -75,4 +77,62 @@ func DelFile(path string) {
 
 func DelDir(path string) {
 	os.RemoveAll(path)
+}
+
+func walkDirTrue(dir string, wg *sync.WaitGroup, fun func(dir string, info os.FileInfo)) {
+	wg.Add(1)
+	defer wg.Done()
+	infos, err := ioutil.ReadDir(dir)
+	if err != nil {
+		LogError("walk dir failed dir:%v err:%v", dir, err)
+		return
+	}
+	for _, info := range infos {
+		if info.IsDir() {
+			fun(dir, info)
+			subDir := filepath.Join(dir, info.Name())
+			go walkDirTrue(subDir, wg, fun)
+		} else {
+			fun(dir, info)
+		}
+	}
+}
+
+func WalkDir(dir string, fun func(dir string, info os.FileInfo)) {
+	if fun == nil {
+		return
+	}
+	wg := &sync.WaitGroup{}
+	walkDirTrue(dir, wg, fun)
+	wg.Wait()
+}
+
+func FileCount(dir string) int32 {
+	var count int32 = 0
+	WalkDir(dir, func(dir string, info os.FileInfo) {
+		if !info.IsDir() {
+			atomic.AddInt32(&count, 1)
+		}
+	})
+	return count
+}
+
+func DirCount(dir string) int32 {
+	var count int32 = 0
+	WalkDir(dir, func(dir string, info os.FileInfo) {
+		if info.IsDir() {
+			atomic.AddInt32(&count, 1)
+		}
+	})
+	return count
+}
+
+func DirSize(dir string) int64 {
+	var size int64 = 0
+	WalkDir(dir, func(dir string, info os.FileInfo) {
+		if !info.IsDir() {
+			atomic.AddInt64(&size, info.Size())
+		}
+	})
+	return size
 }

@@ -26,6 +26,14 @@ func ZlibUnCompress(data []byte) ([]byte, error) {
 	return undatas, nil
 }
 
+func GZipCompress(data []byte) []byte {
+	var in bytes.Buffer
+	w := gzip.NewWriter(&in)
+	w.Write(data)
+	w.Close()
+	return in.Bytes()
+}
+
 func GZipUnCompress(data []byte) ([]byte, error) {
 	b := bytes.NewReader(data)
 	r, _ := gzip.NewReader(b)
