@@ -1,6 +1,7 @@
 package antnet
 
 import (
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -132,14 +133,14 @@ func (r *RedisManager) GetGlobal() *Redis {
 }
 
 func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.channels = channels
 	r.fun = fun
 	for _, v := range r.subMap {
 		if v.pubsub != nil {
 			v.pubsub.Close()
 		}
-	}
-	for _, v := range r.subMap {
 		pubsub := v.Subscribe(channels...)
 		v.pubsub = pubsub
 		goForRedis(func() {
@@ -164,12 +165,12 @@ func (r *RedisManager) Exist(id int) bool {
 
 func (r *RedisManager) Add(id int, conf *RedisConfig) {
 	r.lock.Lock()
+	defer r.lock.Unlock()
 	if _, ok := r.dbs[id]; ok {
 		LogError("redis already have id:%v", id)
-		r.lock.Unlock()
 		return
 	}
-	r.lock.Unlock()
+
 	re := &Redis{
 		Client: redis.NewClient(&redis.Options{
 			Addr:     conf.Addr,
@@ -179,6 +180,22 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 		conf:    conf,
 		manager: r,
 	}
+
+	re.WrapProcess(func(oldProcess func(cmd redis.Cmder) error) func(cmd redis.Cmder) error {
+		return func(cmd redis.Cmder) error {
+			err := oldProcess(cmd)
+			if err != nil {
+				_, retry := err.(net.Error)
+				if !retry {
+					retry = err == io.EOF
+				}
+				if retry {
+					err = oldProcess(cmd)
+				}
+			}
+			return err
+		}
+	})
 
 	if _, ok := r.subMap[conf.Addr]; !ok {
 		r.subMap[conf.Addr] = re
@@ -197,10 +214,7 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 			})
 		}
 	}
-
-	r.lock.Lock()
 	r.dbs[id] = re
-	r.lock.Unlock()
 	LogInfo("connect to redis %v", conf.Addr)
 }
 
