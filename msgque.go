@@ -251,7 +251,7 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 	if msg.Head != nil && msg.Head.Flags&FlagCompress > 0 && msg.Data != nil {
 		data, err := GZipUnCompress(msg.Data)
 		if err != nil {
-			LogError("msgque uncompress failed msgque:%v cmd:%v act:%v err:%v", msgque.Id(), msg.Head.Cmd, msg.Head.Act, err)
+			LogError("msgque uncompress failed msgque:%v cmd:%v act:%v len:%v err:%v", msgque.Id(), msg.Head.Cmd, msg.Head.Act, msg.Head.Len, err)
 			return false
 		}
 		msg.Data = data
