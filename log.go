@@ -97,13 +97,14 @@ const (
 )
 
 type Log struct {
-	logger   []ILogger
-	cwrite   chan string
-	clogger  chan ILogger
-	ctimeout chan *FileLogger
-	bufsize  int
-	stop     int32
-	level    LogLevel
+	logger         [32]ILogger
+	cwrite         chan string
+	ctimeout       chan *FileLogger
+	bufsize        int
+	stop           int32
+	preLoggerCount int32
+	loggerCount    int32
+	level          LogLevel
 }
 
 func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
@@ -138,16 +139,13 @@ func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
 
 func (r *Log) start() {
 	goForLog(func(cstop chan struct{}) {
+		var i int32
 		for !r.IsStop() {
 			select {
-			case l, ok := <-r.clogger:
-				if ok {
-					r.logger = append(r.logger, l)
-				}
 			case s, ok := <-r.cwrite:
 				if ok {
-					for _, writer := range r.logger {
-						writer.Write(s)
+					for i = 0; i < r.loggerCount; i++ {
+						r.logger[i].Write(s)
 					}
 				}
 			case c, ok := <-r.ctimeout:
@@ -171,15 +169,14 @@ func (r *Log) start() {
 							})
 						}
 					}
-
 				}
 			case <-cstop:
 			}
 		}
 
 		for s := range r.cwrite {
-			for _, writer := range r.logger {
-				writer.Write(s)
+			for i = 0; i < r.loggerCount; i++ {
+				r.logger[i].Write(s)
 			}
 		}
 	})
@@ -187,29 +184,24 @@ func (r *Log) start() {
 
 func (r *Log) Stop() {
 	if atomic.CompareAndSwapInt32(&r.stop, 0, 1) {
-		close(r.clogger)
 		close(r.cwrite)
 		close(r.ctimeout)
 	}
 }
 
-func (r *Log) SetLogger(logger ILogger, imme bool) {
-	defer func() { recover() }()
+func (r *Log) SetLogger(logger ILogger) bool {
+	if r.preLoggerCount >= 31 {
+		return false
+	}
 	if f, ok := logger.(*FileLogger); ok {
-		if f := r.initFileLogger(f); f != nil {
-			if imme {
-				r.logger = append(r.logger, f)
-			} else {
-				r.clogger <- f
-			}
-		}
-	} else {
-		if imme {
-			r.logger = append(r.logger, logger)
-		} else {
-			r.clogger <- logger
+		if r.initFileLogger(f) == nil {
+			return false
 		}
 	}
+	r.logger[atomic.AddInt32(&r.preLoggerCount, 1)] = logger
+	atomic.AddInt32(&r.loggerCount, 1)
+	return true
+
 }
 func (r *Log) Level() LogLevel {
 	return r.level
@@ -294,22 +286,14 @@ func (r *Log) Write(v ...interface{}) {
 
 func NewLog(bufsize int, logger ...ILogger) *Log {
 	log := &Log{
-		bufsize:  bufsize,
-		cwrite:   make(chan string, bufsize),
-		clogger:  make(chan ILogger, 32),
-		ctimeout: make(chan *FileLogger, 32),
-		level:    LogLevelAllOn,
+		bufsize:        bufsize,
+		cwrite:         make(chan string, bufsize),
+		ctimeout:       make(chan *FileLogger, 32),
+		level:          LogLevelAllOn,
+		preLoggerCount: -1,
 	}
-	if len(logger) > 0 {
-		for _, l := range logger {
-			if f, ok := l.(*FileLogger); ok {
-				if f := log.initFileLogger(f); f != nil {
-					log.logger = append(log.logger, l)
-				}
-			} else {
-				log.logger = append(log.logger, l)
-			}
-		}
+	for _, l := range logger {
+		log.SetLogger(l)
 	}
 	log.start()
 	return log

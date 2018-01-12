@@ -43,6 +43,7 @@ func NewDir(path string) error {
 func ReadFile(path string) ([]byte, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
+		LogError("read file filed path:%v err:%v", path, err)
 		return nil, ErrFileRead
 	}
 	return data, nil

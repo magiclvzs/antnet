@@ -94,6 +94,15 @@ func MD5Bytes(s []byte) string {
 	return hex.EncodeToString(cipherStr)
 }
 
+func MD5File(path string) string {
+	data, err := ReadFile(path)
+	if err != nil {
+		LogError("calc md5 failed path:%v", path)
+		return ""
+	}
+	return MD5Bytes(data)
+}
+
 func WaitForSystemExit(atexit ...func()) {
 	statis.StartTime = time.Now()
 	signal.Notify(stopChanForSys, os.Interrupt, os.Kill, syscall.SIGTERM)
