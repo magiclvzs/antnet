@@ -34,18 +34,18 @@ type MessageHead struct {
 }
 
 func (r *MessageHead) Bytes() []byte {
-	if r.forever {
+	if r.forever && r.data != nil {
 		return r.data
 	}
-	data := make([]byte, MsgHeadSize)
-	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	r.data = make([]byte, MsgHeadSize)
+	phead := (*MessageHead)(unsafe.Pointer(&r.data[0]))
 	phead.Len = r.Len
 	phead.Error = r.Error
 	phead.Cmd = r.Cmd
 	phead.Act = r.Act
 	phead.Index = r.Index
 	phead.Flags = r.Flags
-	return data
+	return r.data
 }
 
 func (r *MessageHead) FastBytes(data []byte) []byte {
@@ -60,9 +60,12 @@ func (r *MessageHead) FastBytes(data []byte) []byte {
 }
 
 func (r *MessageHead) BytesWithData(wdata []byte) []byte {
+	if r.forever && r.data != nil {
+		return r.data
+	}
 	r.Len = uint32(len(wdata))
-	data := make([]byte, MsgHeadSize+r.Len)
-	phead := (*MessageHead)(unsafe.Pointer(&data[0]))
+	r.data = make([]byte, MsgHeadSize+r.Len)
+	phead := (*MessageHead)(unsafe.Pointer(&r.data[0]))
 	phead.Len = r.Len
 	phead.Error = r.Error
 	phead.Cmd = r.Cmd
@@ -70,9 +73,9 @@ func (r *MessageHead) BytesWithData(wdata []byte) []byte {
 	phead.Index = r.Index
 	phead.Flags = r.Flags
 	if wdata != nil {
-		copy(data[MsgHeadSize:], wdata)
+		copy(r.data[MsgHeadSize:], wdata)
 	}
-	return data
+	return r.data
 }
 
 func (r *MessageHead) FromBytes(data []byte) error {

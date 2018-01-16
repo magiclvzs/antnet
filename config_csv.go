@@ -18,6 +18,10 @@ func SetCSVParseFunc(kind reflect.Kind, fun func(fieldv reflect.Value, data, pat
 	csvParseMap[kind] = fun
 }
 
+func GetCSVParseFunc(kind reflect.Kind) func(fieldv reflect.Value, data, path string) error {
+	return csvParseMap[kind]
+}
+
 func setValue(fieldv reflect.Value, item, data, path string, f *GenConfigObj) error {
 	pm := csvParseMap
 	if f.ParseObjFun != nil {
