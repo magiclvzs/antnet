@@ -23,7 +23,11 @@ antnet尽可能把功能相关的代码组织到一块，让你能快速找到�
 ## 依赖项
 github.com/golang/protobuf   
 github.com/vmihailenco/msgpack   
-github.com/go-redis/redis   
+github.com/go-redis/redis
+
+## 生产环境
+antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
+当然antnet作为最基础的框架并没有实现RUDP，因为游戏类型不同，我更倾向于为每个游戏定制RUDP，所以RUDP在更高一层的战斗服里面。
 
 ## 消息头
 对于一个网络服务器，我们首先需要定义的是消息头，antnet的消息头长度为12个字节，定义如下
@@ -73,10 +77,11 @@ type ParserType int
 
 const (
 	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
-	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
 	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
+	ParserTypeRaw                   //不做任何解析
 )   
 ```
+从老版本移除json解析器，因为除短链接的游戏外，一般json只在认证服使用，逻辑上一般是pb协议。
 这三种类型的解析器，都可以用antnet.Parser来创建。    
 每个解析器需要一个Type字段和一个ErrType字段定义，Type字段表示了消息解析器的类型，而ErrType字段则决定了消息解析失败之后默认的行为,ErrType目前有4中方式：    
 ```
@@ -128,8 +133,6 @@ type GetGamerLevel struct {
 pf.RegisterMsg(&GetGamerLevel{}, nil)
 ```
 这样我们就把这个消息注册到了解析器
-#### json解析器
-json解析器用于解析json格式的数据，json解析器在MsgTypeCmd类型的消息队列中不接受不完整的输入。
 #### protobuf解析器
 protobuf解析器用于解析pb类型的数据
 
