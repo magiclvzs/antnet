@@ -71,7 +71,7 @@ const (
 ```
 
 ## 解析器
-antnet目前有四种解析器类型：  
+antnet目前有三种解析器类型：  
 ```
 type ParserType int
 
@@ -81,7 +81,7 @@ const (
 	ParserTypeRaw                   //不做任何解析
 )   
 ```
-从老版本移除json解析器，因为除短链接的游戏外，一般json只在认证服使用，逻辑上一般是pb协议。    
+从老版本移除了json解析器，因为除短链接的游戏外，一般json只在认证服使用，逻辑上一般是pb协议。    
 这三种类型的解析器，都可以用antnet.Parser来创建。    
 每个解析器需要一个Type字段和一个ErrType字段定义，Type字段表示了消息解析器的类型，而ErrType字段则决定了消息解析失败之后默认的行为,ErrType目前有4中方式：    
 ```
