@@ -1,6 +1,7 @@
 package antnet
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -78,6 +79,18 @@ func DelFile(path string) {
 
 func DelDir(path string) {
 	os.RemoveAll(path)
+}
+
+func CreateFile(path string) (*os.File, error) {
+	dir := PathDir(path)
+	if !PathExists(dir) {
+		NewDir(dir)
+	}
+	return os.Create(path)
+}
+
+func CopyFile(dst io.Writer, src io.Reader) (written int64, err error) {
+	return io.Copy(dst, src)
 }
 
 func walkDirTrue(dir string, wg *sync.WaitGroup, fun func(dir string, info os.FileInfo)) {

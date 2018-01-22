@@ -168,7 +168,25 @@ func Atoi(str string) int {
 func Atoi64(str string) int64 {
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		LogError("str to int64 is err:%v", err)
+		LogError("str to int64 failed err:%v", err)
+		return 0
+	}
+	return i
+}
+
+func Atof(str string) float32 {
+	i, err := strconv.ParseFloat(str, 32)
+	if err != nil {
+		LogError("str to int64 failed err:%v", err)
+		return 0
+	}
+	return float32(i)
+}
+
+func Atof64(str string) float64 {
+	i, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		LogError("str to int64 failed err:%v", err)
 		return 0
 	}
 	return i
