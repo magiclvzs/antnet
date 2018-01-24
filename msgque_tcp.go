@@ -112,7 +112,7 @@ func (r *tcpMsgQue) readMsg() {
 func (r *tcpMsgQue) writeMsg() {
 	var m *Message
 	head := make([]byte, MsgHeadSize)
-	gm := r.getGMsg()
+	gm := r.getGMsg(false)
 	writeCount := 0
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
@@ -127,9 +127,9 @@ func (r *tcpMsgQue) writeMsg() {
 				if gm.fun == nil || gm.fun(r) {
 					m = gm.msg
 					m.Head.FastBytes(head)
-					gm = r.getGMsg()
+					gm = r.getGMsg(true)
 				} else {
-					gm = r.getGMsg()
+					gm = r.getGMsg(true)
 					continue
 				}
 			case <-tick.C:
@@ -186,7 +186,7 @@ func (r *tcpMsgQue) readCmd() {
 
 func (r *tcpMsgQue) writeCmd() {
 	var m *Message
-	gm := r.getGMsg()
+	gm := r.getGMsg(false)
 	writeCount := 0
 	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
 	for !r.IsStop() || m != nil {
@@ -197,9 +197,9 @@ func (r *tcpMsgQue) writeCmd() {
 			case <-gm.c:
 				if gm.fun == nil || gm.fun(r) {
 					m = gm.msg
-					gm = r.getGMsg()
+					gm = r.getGMsg(true)
 				} else {
-					gm = r.getGMsg()
+					gm = r.getGMsg(true)
 					continue
 				}
 			case <-tick.C:
@@ -250,6 +250,7 @@ func (r *tcpMsgQue) write() {
 		r.wait.Done()
 		if err := recover(); err != nil {
 			LogError("msgque write panic id:%v err:%v", r.id, err.(error))
+			LogStack()
 		}
 		if r.conn != nil {
 			r.conn.Close()
@@ -359,20 +360,22 @@ func (r *tcpMsgQue) Reconnect(t int) {
 	}
 	r.init = true
 	Go(func() {
+		if r.cwrite != nil {
+			close(r.cwrite)
+		}
 		if r.conn != nil {
 			r.conn.Close()
-			if len(r.cwrite) == 0 {
-				r.cwrite <- nil
-			}
-			r.wait.Wait()
 		}
-		r.stop = 0
+		r.wait.Wait()
+		r.cwrite = make(chan *Message, 64)
 		if t > 0 {
 			SetTimeout(t*1000, func(arg ...interface{}) int {
+				r.stop = 0
 				r.connect()
 				return 0
 			})
 		} else {
+			r.stop = 0
 			r.connect()
 		}
 
