@@ -135,7 +135,7 @@ func (r *udpMsgQue) write() {
 		}
 
 		if m == nil {
-			break
+			continue
 		}
 
 		if r.msgTyp == MsgTypeCmd {

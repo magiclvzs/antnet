@@ -140,7 +140,7 @@ func (r *tcpMsgQue) writeMsg() {
 		}
 
 		if m == nil {
-			break
+			continue
 		}
 
 		if writeCount < MsgHeadSize {
@@ -210,7 +210,7 @@ func (r *tcpMsgQue) writeCmd() {
 		}
 
 		if m == nil {
-			break
+			continue
 		}
 		n, err := r.conn.Write(m.Data[writeCount:])
 		if err != nil {
@@ -360,14 +360,10 @@ func (r *tcpMsgQue) Reconnect(t int) {
 	}
 	r.init = true
 	Go(func() {
-		if r.cwrite != nil {
-			close(r.cwrite)
-		}
-		if r.conn != nil {
-			r.conn.Close()
+		if len(r.cwrite) == 0 {
+			r.cwrite <- nil
 		}
 		r.wait.Wait()
-		r.cwrite = make(chan *Message, 64)
 		if t > 0 {
 			SetTimeout(t*1000, func(arg ...interface{}) int {
 				r.stop = 0
