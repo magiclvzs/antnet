@@ -123,14 +123,11 @@ func (r *udpMsgQue) write() {
 		case <-gm.c:
 			if gm.fun == nil || gm.fun(r) {
 				m = gm.msg
-				gm = r.getGMsg(true)
-			} else {
-				gm = r.getGMsg(true)
-				continue
 			}
+			gm = r.getGMsg(true)
 		case <-tick.C:
-			if r.checkTimeout(tick) {
-				continue
+			if r.isTimeout(tick) {
+				r.Stop()
 			}
 		}
 

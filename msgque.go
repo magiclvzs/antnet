@@ -127,7 +127,7 @@ func (r *msgQue) SetTimeout(t int) {
 	}
 }
 
-func (r *msgQue) checkTimeout(tick *time.Timer) bool {
+func (r *msgQue) isTimeout(tick *time.Timer) bool {
 	left := int(Timestamp - r.lastTick)
 	if left < r.timeout || r.timeout == 0 {
 		if r.timeout == 0 {
@@ -135,10 +135,10 @@ func (r *msgQue) checkTimeout(tick *time.Timer) bool {
 		} else {
 			tick.Reset(time.Second * time.Duration(r.timeout-left))
 		}
-		return true
+		return false
 	}
 	LogInfo("msgque close because timeout id:%v wait:%v timeout:%v", r.id, left, r.timeout)
-	return false
+	return true
 }
 
 func (r *msgQue) GetTimeout() int {
