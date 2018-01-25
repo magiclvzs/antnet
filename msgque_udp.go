@@ -15,6 +15,13 @@ type udpMsgQue struct {
 	sync.Mutex
 }
 
+type udpMsgQueHelper struct {
+	init int32
+	null bool
+	sync.Mutex
+	*udpMsgQue
+}
+
 func (r *udpMsgQue) GetNetType() NetType {
 	return NetTypeUdp
 }
@@ -167,7 +174,7 @@ func (r *udpMsgQue) sendRead(data []byte, n int) (re bool) {
 	return
 }
 
-var udpMap map[string]*udpMsgQue = map[string]*udpMsgQue{}
+var udpMap map[string]*udpMsgQueHelper = map[string]*udpMsgQueHelper{}
 var udpMapLock sync.Mutex
 
 func (r *udpMsgQue) listenTrue() {
@@ -187,16 +194,26 @@ func (r *udpMsgQue) listenTrue() {
 			continue
 		}
 
+		addrStr := addr.String()
 		udpMapLock.Lock()
-		msgque, ok := udpMap[addr.String()]
+		helper, ok := udpMap[addrStr]
 		if !ok {
-			msgque = newUdpAccept(r.conn, r.msgTyp, r.handler, r.parserFactory, addr)
-			udpMap[addr.String()] = msgque
+			helper = &udpMsgQueHelper{null: true}
+			udpMap[addrStr] = helper
 		}
 		udpMapLock.Unlock()
 
-		if !msgque.sendRead(data, n) {
-			LogError("drop msg because msgque full msgqueid:%v", msgque.id)
+		if helper.null {
+			helper.Lock()
+			if atomic.CompareAndSwapInt32(&helper.init, 0, 1) {
+				helper.udpMsgQue = newUdpAccept(r.conn, r.msgTyp, r.handler, r.parserFactory, addr)
+				helper.null = false
+			}
+			helper.Unlock()
+		}
+
+		if !helper.sendRead(data, n) {
+			LogError("drop msg because msgque full msgqueid:%v", helper.id)
 		}
 	}
 }

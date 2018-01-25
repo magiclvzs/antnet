@@ -77,7 +77,7 @@ var StartTick int64
 var NowTick int64
 var Timestamp int64
 
-var UdpServerGoCnt int = 32
+var UdpServerGoCnt int = 64
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {
