@@ -33,6 +33,18 @@ func RandNorm64(sd, mean int32) float64 {
 	return rand.NormFloat64()*float64(sd) + float64(mean)
 }
 
+//正态分布,在一定范围内
+func RandNormInt32(min, max, sd, mean int32) int32 {
+	result := int32(Atoi(RoundStr("%0.0f", RandNorm64(sd, mean))))
+	if result < min {
+		return min
+	}
+	if result > max {
+		return max
+	}
+	return result
+}
+
 //四舍五入保留n位小数,如保留整数"%.0f",保留3位小数"%.3f"...保留n位小数"%.nf"
 func RoundStr(format string, decimal float64) string {
 	return Sprintf(format, decimal)

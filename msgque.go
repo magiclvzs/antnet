@@ -158,7 +158,11 @@ func (r *msgQue) Send(m *Message) (re bool) {
 			re = false
 		}
 	}()
-
+	if m.Head != nil && m.Head.Len >= 1500 && (m.Head.Flags&FlagCompress) == 0 {
+		m.Head.Flags |= FlagCompress
+		m.Data = GZipCompress(m.Data)
+		m.Head.Len = uint32(len(m.Data))
+	}
 	r.cwrite <- m
 	return true
 }
