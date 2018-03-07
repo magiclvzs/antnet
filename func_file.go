@@ -14,6 +14,39 @@ func PathBase(p string) string {
 	return path.Base(p)
 }
 
+func PathAbs(p string) string {
+	f, err := filepath.Abs(p)
+	if err != nil {
+		LogError("get abs path failed path:%v err:%v", p, err)
+		return ""
+	}
+	return f
+}
+
+func GetEXEDir() string {
+	return PathDir(GetEXEPath())
+}
+
+func GetEXEPath() string {
+	return PathAbs(os.Args[0])
+}
+
+func GetExeName() string {
+	return PathBase(GetEXEPath())
+}
+
+func GetExeDir() string {
+	return PathDir(GetEXEPath())
+}
+
+func GetExePath() string {
+	return PathAbs(os.Args[0])
+}
+
+func GetEXEName() string {
+	return PathBase(GetEXEPath())
+}
+
 func PathDir(p string) string {
 	return path.Dir(p)
 }

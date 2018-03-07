@@ -51,6 +51,7 @@ type IMsgQue interface {
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
 	SendCallback(m *Message, c chan *Message) (re bool)
+	SetSendFast()
 	SetTimeout(t int)
 	GetTimeout() int
 	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
@@ -79,10 +80,15 @@ type msgQue struct {
 
 	init         bool
 	available    bool
+	sendFast     bool
 	callback     map[int]chan *Message
 	user         interface{}
 	callbackLock sync.Mutex
 	gmsgId       uint16
+}
+
+func (r *msgQue) SetSendFast() {
+	r.sendFast = true
 }
 
 func (r *msgQue) SetUser(user interface{}) {

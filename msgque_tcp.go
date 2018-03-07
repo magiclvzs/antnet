@@ -109,6 +109,55 @@ func (r *tcpMsgQue) readMsg() {
 	}
 }
 
+func (r *tcpMsgQue) writeMsgFast() {
+	var m *Message
+	var data []byte
+	gm := r.getGMsg(false)
+	writeCount := 0
+	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
+	for !r.IsStop() || m != nil {
+		if m == nil {
+			select {
+			case <-stopChanForGo:
+			case m = <-r.cwrite:
+				if m != nil {
+					data = m.Bytes()
+				}
+			case <-gm.c:
+				if gm.fun == nil || gm.fun(r) {
+					m = gm.msg
+					data = m.Bytes()
+				}
+				gm = r.getGMsg(true)
+			case <-tick.C:
+				if r.isTimeout(tick) {
+					r.Stop()
+				}
+			}
+		}
+
+		if m == nil {
+			continue
+		}
+
+		if writeCount < len(data) {
+			n, err := r.conn.Write(data[writeCount:])
+			if err != nil {
+				LogError("msgque write id:%v err:%v", r.id, err)
+				break
+			}
+			writeCount += n
+		}
+
+		if writeCount == len(data) {
+			writeCount = 0
+			m = nil
+		}
+		r.lastTick = Timestamp
+	}
+	tick.Stop()
+}
+
 func (r *tcpMsgQue) writeMsg() {
 	var m *Message
 	head := make([]byte, MsgHeadSize)
@@ -255,7 +304,11 @@ func (r *tcpMsgQue) write() {
 	if r.msgTyp == MsgTypeCmd {
 		r.writeCmd()
 	} else {
-		r.writeMsg()
+		if r.sendFast {
+			r.writeMsgFast()
+		} else {
+			r.writeMsg()
+		}
 	}
 }
 
