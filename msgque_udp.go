@@ -219,7 +219,7 @@ func (r *udpMsgQue) listenTrue() {
 }
 
 func (r *udpMsgQue) listen() {
-	for i := 0; i < UdpServerGoCnt; i++ {
+	for i := 0; i < Config.UdpServerGoCnt; i++ {
 		Go(func() {
 			r.listenTrue()
 		})

@@ -77,7 +77,10 @@ var StartTick int64
 var NowTick int64
 var Timestamp int64
 
-var UdpServerGoCnt int = 64
+var Config = struct {
+	AutoCompressLen uint32
+	UdpServerGoCnt  int
+}{0, 64}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {
