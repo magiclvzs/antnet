@@ -10,8 +10,8 @@ func Test_MinHeap(t *testing.T) {
 		mh.Push(i, i)
 	}
 	m, p := mh.GetMin()
-
-	Printf("min : %v %v \n", m, p)
+	top := mh.Top()
+	Printf("min : %v %v %v\n", m, p, top)
 	for i := 0; i < 10; i++ {
 		x := mh.Pop()
 		Printf("%v  ", x)
@@ -35,8 +35,8 @@ func Test_MaxHeap(t *testing.T) {
 		mh.Push(i, i)
 	}
 	m, p := mh.GetMin()
-
-	Printf("max : %v %v \n", m, p)
+	top := mh.Top()
+	Printf("max : %v %v %v\n", m, p, top)
 	for i := 0; i < 10; i++ {
 		x := mh.Pop()
 		Printf("%v  ", x)

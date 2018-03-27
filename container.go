@@ -66,6 +66,11 @@ func (r *Heap) Update(value, priority int) {
 	}
 }
 
+func (r *Heap) Top() int {
+	_, v := r.GetMin()
+	return v
+}
+
 func (r *Heap) GetMin() (priority int, value int) {
 	it := heap.Pop(r.p).(*item)
 	heap.Push(r.p, it)
