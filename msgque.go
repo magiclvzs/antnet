@@ -410,7 +410,7 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 			url = "/" + naddr[1]
 		}
 
-		msgque := newWsListen(naddr[0], url, typ, handler, parser)
+		msgque := newWsListen(naddr[0], url, MsgTypeCmd, handler, parser)
 		Go(func() {
 			LogDebug("process listen for msgque:%d", msgque.id)
 			msgque.listen()

@@ -1,10 +1,11 @@
 package antnet
 
 import (
-	"github.com/gorilla/websocket"
 	"net/http"
 	"sync/atomic"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type wsMsgQue struct {
@@ -89,7 +90,7 @@ func (r *wsMsgQue) writeCmd() {
 			}
 		}
 
-		if m == nil {
+		if m == nil || m.Data == nil {
 			continue
 		}
 		err := r.conn.WriteMessage(websocket.BinaryMessage, m.Data)
@@ -112,9 +113,7 @@ func (r *wsMsgQue) read() {
 		r.Stop()
 	}()
 
-	if r.msgTyp == MsgTypeCmd {
-		r.readCmd()
-	}
+	r.readCmd()
 }
 
 func (r *wsMsgQue) write() {
@@ -129,9 +128,7 @@ func (r *wsMsgQue) write() {
 		r.Stop()
 	}()
 
-	if r.msgTyp == MsgTypeCmd {
-		r.writeCmd()
-	}
+	r.writeCmd()
 }
 
 func (r *wsMsgQue) listen() {
