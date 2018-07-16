@@ -22,6 +22,7 @@ type NetType int
 const (
 	NetTypeTcp NetType = iota //TCP类型
 	NetTypeUdp                //UDP类型
+	NetTypeWs                 //websocket
 )
 
 type ConnType int
@@ -401,6 +402,20 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 			LogError("listen on %s failed, errstr:%s", addr, err)
 			return err
 		}
+	}
+	if addrs[0] == "ws" {
+		naddr := strings.SplitN(addrs[1], "/", 2)
+		url := "/"
+		if len(naddr) > 1 {
+			url = "/" + naddr[1]
+		}
+
+		msgque := newWsListen(naddr[0], url, typ, handler, parser)
+		Go(func() {
+			LogDebug("process listen for msgque:%d", msgque.id)
+			msgque.listen()
+			LogDebug("process listen end for msgque:%d", msgque.id)
+		})
 	}
 	return nil
 }
