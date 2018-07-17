@@ -12,17 +12,26 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrPBUnPack
 	}
-	p, ok := r.msgMap[msg.Head.CmdAct()]
-	if ok {
+	var p *MsgParser
+	if msg.Head == nil {
+		if r.defParser.c2sFunc == nil {
+			return nil, ErrPBUnPack
+		}
+		x := r.defParser
+		p = &x
+	} else if x, ok := r.msgMap[msg.Head.CmdAct()]; ok {
+		p = &x
+	}
+	if p != nil {
 		if p.C2S() != nil {
 			err := PBUnPack(msg.Data, p.C2S())
 			if err != nil {
 				return nil, err
 			}
 			p.parser = r
-			return &p, nil
+			return p, nil
 		} else {
-			return &p, nil
+			return p, nil
 		}
 	}
 

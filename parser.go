@@ -85,9 +85,10 @@ type Parser struct {
 	Type    ParserType
 	ErrType ParseErrType
 
-	msgMap  map[int]MsgParser
-	cmdRoot *cmdParseNode
-	parser  IParser
+	msgMap    map[int]MsgParser
+	defParser MsgParser
+	cmdRoot   *cmdParseNode
+	parser    IParser
 }
 
 func (r *Parser) Get() IParser {
@@ -122,31 +123,29 @@ func (r *Parser) RegisterFunc(cmd, act uint8, c2sFunc ParseFunc, s2cFunc ParseFu
 }
 
 func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
-	if r.msgMap == nil {
-		r.msgMap = map[int]MsgParser{}
-	}
+	var c2sFunc ParseFunc = nil
+	var s2cFunc ParseFunc = nil
 
-	p := MsgParser{}
 	if c2s != nil {
 		c2sType := reflect.TypeOf(c2s).Elem()
-		p.c2sFunc = func() interface{} {
+		c2sFunc = func() interface{} {
 			return reflect.New(c2sType).Interface()
 		}
 	}
 	if s2c != nil {
 		s2cType := reflect.TypeOf(s2c).Elem()
-		p.s2cFunc = func() interface{} {
+		s2cFunc = func() interface{} {
 			return reflect.New(s2cType).Interface()
 		}
 	}
-
-	r.msgMap[CmdAct(cmd, act)] = p
+	r.RegisterFunc(cmd, act, c2sFunc, s2cFunc)
 }
 
 func (r *Parser) RegisterMsgFunc(c2sFunc ParseFunc, s2cFunc ParseFunc) {
 	if r.cmdRoot == nil {
 		r.cmdRoot = &cmdParseNode{}
 	}
+	r.defParser = MsgParser{c2sFunc: c2sFunc, s2cFunc: s2cFunc}
 	registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
 }
 
@@ -166,10 +165,7 @@ func (r *Parser) RegisterMsg(c2s interface{}, s2c interface{}) {
 		}
 	}
 
-	if r.cmdRoot == nil {
-		r.cmdRoot = &cmdParseNode{}
-	}
-	registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
+	r.RegisterMsgFunc(c2sFunc, s2cFunc)
 }
 
 func JsonUnPack(data []byte, msg interface{}) error {

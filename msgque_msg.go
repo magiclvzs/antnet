@@ -173,9 +173,11 @@ func (r *Message) Bytes() []byte {
 }
 
 func (r *Message) CopyTag(old *Message) *Message {
-	r.Head.Cmd = old.Head.Cmd
-	r.Head.Act = old.Head.Act
-	r.Head.Index = old.Head.Index
+	if r.Head != nil && old.Head != nil {
+		r.Head.Cmd = old.Head.Cmd
+		r.Head.Act = old.Head.Act
+		r.Head.Index = old.Head.Index
+	}
 	return r
 }
 

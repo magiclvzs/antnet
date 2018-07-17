@@ -24,6 +24,7 @@ antnet尽可能把功能相关的代码组织到一块，让你能快速找到�
 github.com/golang/protobuf   
 github.com/vmihailenco/msgpack   
 github.com/go-redis/redis
+github.com/gorilla/websocket
 
 ## 生产环境
 antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。  

@@ -268,6 +268,7 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 			return false
 		}
 		msg.Data = data
+		msg.Head.Flags -= FlagCompress
 		msg.Head.Len = uint32(len(msg.Data))
 	}
 	if r.parser != nil && msg.Data != nil {
