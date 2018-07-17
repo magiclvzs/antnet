@@ -141,6 +141,20 @@ func (r *Message) CmdAct() int {
 	return 0
 }
 
+func (r *Message) Len() uint32 {
+	if r.Head != nil {
+		return r.Head.Len
+	}
+	return 0
+}
+
+func (r *Message) Error() uint16 {
+	if r.Head != nil {
+		return r.Head.Error
+	}
+	return 0
+}
+
 func (r *Message) Cmd() uint8 {
 	if r.Head != nil {
 		return r.Head.Cmd
@@ -151,6 +165,20 @@ func (r *Message) Cmd() uint8 {
 func (r *Message) Act() uint8 {
 	if r.Head != nil {
 		return r.Head.Act
+	}
+	return 0
+}
+
+func (r *Message) Index() uint16 {
+	if r.Head != nil {
+		return r.Head.Index
+	}
+	return 0
+}
+
+func (r *Message) Flags() uint16 {
+	if r.Head != nil {
+		return r.Head.Flags
 	}
 	return 0
 }
