@@ -38,6 +38,7 @@ antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
 	https://github.com/magiclvzs/wsserver
 	wsserver是一个websocket的测试框架，用于展示如何使用antnet
 	只有不到60行逻辑代码，实现了基于websocket+protobuf的聊天系统
+	antnet的正式框架为union，只是有些细节我还在斟酌，想好之后才会上传代码
 
 ## 消息头
 对于一个网络服务器，我们首先需要定义的是消息头，antnet的消息头长度为12个字节，定义如下
