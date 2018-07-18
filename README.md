@@ -11,7 +11,7 @@ import (
 
 func main() {
 	antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, &antnet.EchoMsgHandler{}, nil)
-	antnet.WaitForSystemExit()
+	antnet.WaitForSystemExit(nil)
 }
 ```
 通过上面的代码我们就实现了一个最简单的echo服务器。   
