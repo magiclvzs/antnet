@@ -129,7 +129,7 @@ func GetSelfIp(ifnames ...string) []string {
 	}
 	inters, _ := net.Interfaces()
 	if len(ifnames) == 0 {
-		ifnames = []string{"eth", "lo", "无线网络连接", "本地连接"}
+		ifnames = []string{"eth", "lo", "eno", "无线网络连接", "本地连接"}
 	}
 
 	filterFunc := func(name string) bool {

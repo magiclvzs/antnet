@@ -9,29 +9,29 @@ type pBParser struct {
 }
 
 func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
-	if msg == nil {
+	if msg == nil || msg.Data == nil || len(msg.Data) == 0 {
 		return nil, ErrPBUnPack
 	}
-	var p *MsgParser
+
 	if msg.Head == nil {
-		if r.defParser.c2sFunc == nil {
-			return nil, ErrPBUnPack
+		for _, p := range r.typMap {
+			if p.C2S() != nil {
+				err := PBUnPack(msg.Data, p.C2S())
+				if err != nil {
+					continue
+				}
+				p.parser = r
+				return &p, nil
+			}
 		}
-		x := r.defParser
-		p = &x
-	} else if x, ok := r.msgMap[msg.Head.CmdAct()]; ok {
-		p = &x
-	}
-	if p != nil {
+	} else if p, ok := r.msgMap[msg.Head.CmdAct()]; ok {
 		if p.C2S() != nil {
 			err := PBUnPack(msg.Data, p.C2S())
 			if err != nil {
 				return nil, err
 			}
 			p.parser = r
-			return p, nil
-		} else {
-			return p, nil
+			return &p, nil
 		}
 	}
 

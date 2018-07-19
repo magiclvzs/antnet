@@ -326,7 +326,7 @@ func (r *DefMsgHandler) GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc
 		return r.OnProcessMsg
 	}
 
-	if msg.CmdAct() == 0 {
+	if msg.Head == nil {
 		if r.typeMap != nil {
 			if f, ok := r.typeMap[reflect.TypeOf(msg.C2S())]; ok {
 				return f
@@ -376,9 +376,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 		if err == nil {
 			msgque := newTcpListen(listen, typ, handler, parser, addr)
 			Go(func() {
-				LogDebug("process listen for msgque:%d", msgque.id)
+				LogDebug("process listen for tcp msgque:%d", msgque.id)
 				msgque.listen()
-				LogDebug("process listen end for msgque:%d", msgque.id)
+				LogDebug("process listen end for tcp msgque:%d", msgque.id)
 			})
 		} else {
 			LogError("listen on %s failed, errstr:%s", addr, err)
@@ -395,9 +395,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 		if err == nil {
 			msgque := newUdpListen(conn, typ, handler, parser, addr)
 			Go(func() {
-				LogDebug("process listen for msgque:%d", msgque.id)
+				LogDebug("process listen for udp msgque:%d", msgque.id)
 				msgque.listen()
-				LogDebug("process listen end for msgque:%d", msgque.id)
+				LogDebug("process listen end for udp msgque:%d", msgque.id)
 			})
 		} else {
 			LogError("listen on %s failed, errstr:%s", addr, err)
@@ -410,12 +410,12 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 		if len(naddr) > 1 {
 			url = "/" + naddr[1]
 		}
-
+		LogInfo("ws type msgque noly support MsgTypeCmd now auto set to MsgTypeCmd")
 		msgque := newWsListen(naddr[0], url, MsgTypeCmd, handler, parser)
 		Go(func() {
-			LogDebug("process listen for msgque:%d", msgque.id)
+			LogDebug("process listen for ws msgque:%d", msgque.id)
 			msgque.listen()
-			LogDebug("process listen end for msgque:%d", msgque.id)
+			LogDebug("process listen end for ws msgque:%d", msgque.id)
 		})
 	}
 	return nil

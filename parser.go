@@ -85,10 +85,10 @@ type Parser struct {
 	Type    ParserType
 	ErrType ParseErrType
 
-	msgMap    map[int]MsgParser
-	defParser MsgParser
-	cmdRoot   *cmdParseNode
-	parser    IParser
+	msgMap  map[int]MsgParser
+	typMap  map[reflect.Type]MsgParser
+	cmdRoot *cmdParseNode
+	parser  IParser
 }
 
 func (r *Parser) Get() IParser {
@@ -115,6 +115,10 @@ func (r *Parser) GetErrType() ParseErrType {
 }
 
 func (r *Parser) RegisterFunc(cmd, act uint8, c2sFunc ParseFunc, s2cFunc ParseFunc) {
+	if r.Type != ParserTypePB {
+		LogError("parse type not equal want:ParserTypePB")
+		return
+	}
 	if r.msgMap == nil {
 		r.msgMap = map[int]MsgParser{}
 	}
@@ -123,6 +127,10 @@ func (r *Parser) RegisterFunc(cmd, act uint8, c2sFunc ParseFunc, s2cFunc ParseFu
 }
 
 func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
+	if r.Type != ParserTypePB {
+		LogError("parse type not equal want:ParserTypePB")
+		return
+	}
 	var c2sFunc ParseFunc = nil
 	var s2cFunc ParseFunc = nil
 
@@ -142,14 +150,24 @@ func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
 }
 
 func (r *Parser) RegisterMsgFunc(c2sFunc ParseFunc, s2cFunc ParseFunc) {
-	if r.cmdRoot == nil {
-		r.cmdRoot = &cmdParseNode{}
+	if r.Type == ParserTypeCmd {
+		if r.cmdRoot == nil {
+			r.cmdRoot = &cmdParseNode{}
+		}
+		registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
+	} else if r.Type == ParserTypePB {
+		if r.typMap == nil {
+			r.typMap = map[reflect.Type]MsgParser{}
+		}
+		r.typMap[reflect.TypeOf(c2sFunc())] = MsgParser{c2sFunc: c2sFunc, s2cFunc: s2cFunc}
 	}
-	r.defParser = MsgParser{c2sFunc: c2sFunc, s2cFunc: s2cFunc}
-	registerCmdParser(r.cmdRoot, c2sFunc, s2cFunc)
 }
 
 func (r *Parser) RegisterMsg(c2s interface{}, s2c interface{}) {
+	if r.Type == ParserTypeRaw {
+		LogError("parse type not equal want:ParserTypePB or ParserTypeCmd")
+		return
+	}
 	var c2sFunc ParseFunc = nil
 	var s2cFunc ParseFunc = nil
 	if c2s != nil {
