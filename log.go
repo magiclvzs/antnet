@@ -62,10 +62,10 @@ func (r *FileLogger) Write(str string) {
 		r.file = nil
 		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%v", Date()) + r.extname
 		if r.OnRenameFile != nil {
-			newpath = r.OnRenameFile(r.dirname + "/", r.filename, r.extname)
+			newpath = r.OnRenameFile(r.dirname+"/", r.filename, r.extname)
 		}
 		os.Rename(r.Path, newpath)
-		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err == nil {
 			r.file = file
 		}
@@ -115,11 +115,12 @@ type Log struct {
 func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
 	if f.file == nil {
 		f.Path, _ = filepath.Abs(f.Path)
+		f.Path = StrReplace(f.Path, "\\", "/")
 		f.dirname = path.Dir(f.Path)
 		f.extname = path.Ext(f.Path)
 		f.filename = filepath.Base(f.Path[0 : len(f.Path)-len(f.extname)])
-		os.MkdirAll(f.dirname, 0777)
-		file, err := os.OpenFile(f.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		os.MkdirAll(f.dirname, 0666)
+		file, err := os.OpenFile(f.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 		if err == nil {
 			f.file = file
 			info, err := f.file.Stat()
@@ -159,10 +160,10 @@ func (r *Log) start() {
 					c.file = nil
 					newpath := c.dirname + "/" + c.filename + fmt.Sprintf("_%v", Date()) + c.extname
 					if c.OnRenameFile != nil {
-						newpath = c.OnRenameFile(c.dirname + "/", c.filename, c.extname)
+						newpath = c.OnRenameFile(c.dirname+"/", c.filename, c.extname)
 					}
 					os.Rename(c.Path, newpath)
-					file, err := os.OpenFile(c.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+					file, err := os.OpenFile(c.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 					if err == nil {
 						c.file = file
 					}
