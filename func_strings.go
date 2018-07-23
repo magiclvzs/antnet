@@ -36,6 +36,16 @@ func StrReplace(s, old, new string) string {
 	return strings.Replace(s, old, new, -1)
 }
 
+func ReplaceMultStr(s string, oldnew ...string) string {
+	r := strings.NewReplacer(oldnew...)
+	return r.Replace(s)
+}
+
+func StrReplaceMult(s string, oldnew ...string) string {
+	r := strings.NewReplacer(oldnew...)
+	return r.Replace(s)
+}
+
 func TrimStr(s string) string {
 	return strings.TrimSpace(s)
 }

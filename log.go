@@ -28,13 +28,15 @@ func (r *ConsoleLogger) Write(str string) {
 
 type OnFileLogFull func(path string)
 type OnFileLogTimeout func(path string) int
+type OnFileRename func(dirName, fileName, extName string) string
 type FileLogger struct {
-	Path      string
-	Ln        bool
-	Timeout   int //0表示不设置, 单位s
-	MaxSize   int //0表示不限制，最大大小
-	OnFull    OnFileLogFull
-	OnTimeout OnFileLogTimeout
+	Path         string
+	Ln           bool
+	Timeout      int //0表示不设置, 单位s
+	MaxSize      int //0表示不限制，最大大小
+	OnFull       OnFileLogFull
+	OnTimeout    OnFileLogTimeout
+	OnRenameFile OnFileRename
 
 	size     int
 	file     *os.File
@@ -59,6 +61,9 @@ func (r *FileLogger) Write(str string) {
 		r.file.Close()
 		r.file = nil
 		newpath := r.dirname + "/" + r.filename + fmt.Sprintf("_%v", Date()) + r.extname
+		if r.OnRenameFile != nil {
+			newpath = r.OnRenameFile(r.dirname + "/", r.filename, r.extname)
+		}
 		os.Rename(r.Path, newpath)
 		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 		if err == nil {
@@ -153,6 +158,9 @@ func (r *Log) start() {
 					c.file.Close()
 					c.file = nil
 					newpath := c.dirname + "/" + c.filename + fmt.Sprintf("_%v", Date()) + c.extname
+					if c.OnRenameFile != nil {
+						newpath = c.OnRenameFile(c.dirname + "/", c.filename, c.extname)
+					}
 					os.Rename(c.Path, newpath)
 					file, err := os.OpenFile(c.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
 					if err == nil {
