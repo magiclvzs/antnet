@@ -170,7 +170,13 @@ func (r *msgQue) Send(m *Message) (re bool) {
 		m.Data = GZipCompress(m.Data)
 		m.Head.Len = uint32(len(m.Data))
 	}
-	r.cwrite <- m
+	select {
+	case r.cwrite <- m:
+	default:
+		LogWarn("msgque write channel full msgque:%v", r.id)
+		r.cwrite <- m
+	}
+
 	return true
 }
 

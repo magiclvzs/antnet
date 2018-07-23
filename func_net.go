@@ -181,3 +181,18 @@ func GetSelfExtraIp(ifnames ...string) (ips []string) {
 
 	return
 }
+
+func IPCanUse(ip string) bool {
+	var err error
+	for port := 1024; port < 65535; port++ {
+		addr := Sprintf("%v:%v", ip, port)
+		listen, err := net.Listen("tcp", addr)
+		if err == nil {
+			listen.Close()
+			break
+		} else if StrFind(err.Error(), "address is not valid") != -1 {
+			return false
+		}
+	}
+	return err == nil
+}
