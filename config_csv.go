@@ -29,7 +29,11 @@ func setValue(fieldv reflect.Value, item, data, path string, line int, f *GenCon
 	}
 
 	if fun, ok := pm[fieldv.Kind()]; ok {
-		return fun(fieldv, data, path)
+		err := fun(fieldv, data, path)
+		if err != nil {
+			LogError("csv read error path:%v line:%v err:%v field:%v", path, line, err, item)
+		}
+		return err
 	} else {
 		v, err := ParseBaseKind(fieldv.Kind(), data)
 		if err != nil {
@@ -46,7 +50,7 @@ func setValue(fieldv reflect.Value, item, data, path string, line int, f *GenCon
 	path 文件路径
 	nindex key值行号，从1开始
 	dataBegin 数据开始行号，从1开始
-	f 对象产生器
+	f 对象产生器 json:"-" tag字段会被跳过
 */
 func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) (error, []interface{}) {
 	csv_nimap := map[string]int{}
@@ -69,27 +73,20 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) 
 		if name == "" {
 			continue
 		}
-		stringTemp := ""
-		stringArry := strings.Split(name, "_")
-		for _, v := range stringArry {
-			bname := []byte(v)
-			if (47 < bname[0]) && (bname[0] < 58) { //避開"_+數字"的配置字段
-				stringTemp += "_"
-			} else {
-				bname[0] = byte(int(bname[0]) & ^32)
-			}
-			stringTemp += string(bname)
-		}
-		csv_nimap[stringTemp] = index
+		bname := []byte(name)
+		bname[0] = byte(int(bname[0]) & ^32)
+		csv_nimap[string(bname)] = index
 	}
 
 	typ := reflect.ValueOf(f.GenObjFun()).Elem().Type()
 	for i := 0; i < typ.NumField(); i++ {
-		name := typ.FieldByIndex([]int{i}).Name
+		fieldt := typ.FieldByIndex([]int{i})
+		name := fieldt.Name
 		if v, ok := csv_nimap[name]; ok {
 			nimap[name] = v
-		} else if name != "XXX_unrecognized" { //由于生成pb结构多了一个XXX_unrecognized成员,此成员不参与异常字段判断
-			LogInfo("config index not found file:%s name:%s\n", path, name)
+		} else if fieldt.Tag.Get("json") != "-" {
+			LogError("config index not found path:%s name:%s", path, name)
+			return ErrCSVParse, nil
 		}
 	}
 
