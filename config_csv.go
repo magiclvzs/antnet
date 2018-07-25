@@ -22,7 +22,7 @@ func GetCSVParseFunc(kind reflect.Kind) func(fieldv reflect.Value, data, path st
 	return csvParseMap[kind]
 }
 
-func setValue(fieldv reflect.Value, item, data, path string, f *GenConfigObj) error {
+func setValue(fieldv reflect.Value, item, data, path string, line int, f *GenConfigObj) error {
 	pm := csvParseMap
 	if f.ParseObjFun != nil {
 		pm = f.ParseObjFun
@@ -33,7 +33,7 @@ func setValue(fieldv reflect.Value, item, data, path string, f *GenConfigObj) er
 	} else {
 		v, err := ParseBaseKind(fieldv.Kind(), data)
 		if err != nil {
-			LogError("csv read error path:%v err:%v field:%v", path, err, item)
+			LogError("csv read error path:%v line:%v err:%v field:%v", path, line, err, item)
 			return err
 		}
 		fieldv.Set(reflect.ValueOf(v))
@@ -42,6 +42,12 @@ func setValue(fieldv reflect.Value, item, data, path string, f *GenConfigObj) er
 	return nil
 }
 
+/*
+	path 文件路径
+	nindex key值行号，从1开始
+	dataBegin 数据开始行号，从1开始
+	f 对象产生器
+*/
 func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) (error, []interface{}) {
 	csv_nimap := map[string]int{}
 	nimap := map[string]int{}
@@ -94,12 +100,12 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) 
 		for k, v := range nimap {
 			switch obje.FieldByName(k).Kind() {
 			case reflect.Ptr:
-				err := setValue(obje.FieldByName(k).Elem(), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				err = setValue(obje.FieldByName(k).Elem(), k, strings.TrimSpace(csvdata[i][v]), path, i+1, f)
 				if err != nil {
 					return err, nil
 				}
 			default:
-				err := setValue(obje.FieldByName(k), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				err = setValue(obje.FieldByName(k), k, strings.TrimSpace(csvdata[i][v]), path, i+1, f)
 				if err != nil {
 					return err, nil
 				}
@@ -134,7 +140,10 @@ func ReadConfigFromCSVLie(path string, keyIndex int, valueIndex int, dataBegin i
 		name := csvdata[i][keyIndex-1]
 		bname := []byte(name)
 		bname[0] = byte(int(bname[0]) & ^32)
-		setValue(robj.FieldByName(string(bname)), string(bname), strings.TrimSpace(csvdata[i][valueIndex-1]), path, f)
+		err = setValue(robj.FieldByName(string(bname)), string(bname), strings.TrimSpace(csvdata[i][valueIndex-1]), path, i+1, f)
+		if err != nil {
+			return err, nil
+		}
 	}
 
 	return nil, obj
