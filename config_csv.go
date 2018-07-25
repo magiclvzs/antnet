@@ -94,9 +94,15 @@ func ReadConfigFromCSV(path string, nindex int, dataBegin int, f *GenConfigObj) 
 		for k, v := range nimap {
 			switch obje.FieldByName(k).Kind() {
 			case reflect.Ptr:
-				setValue(obje.FieldByName(k).Elem(), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				err := setValue(obje.FieldByName(k).Elem(), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				if err != nil {
+					return err, nil
+				}
 			default:
-				setValue(obje.FieldByName(k), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				err := setValue(obje.FieldByName(k), k, strings.TrimSpace(csvdata[i][v]), path, f)
+				if err != nil {
+					return err, nil
+				}
 			}
 		}
 		dataObj = append(dataObj, obj)
