@@ -92,14 +92,22 @@ func (r *FileLogger) Write(str string) {
 type LogLevel int
 
 const (
-	LogLevelAllOn  LogLevel = iota //开放说有日志
-	LogLevelDebug                  //调试信息
+	LogLevelDebug  LogLevel = iota //调试信息
 	LogLevelInfo                   //资讯讯息
 	LogLevelWarn                   //警告状况发生
 	LogLevelError                  //一般错误，可能导致功能不正常
 	LogLevelFatal                  //严重错误，会导致进程退出
 	LogLevelAllOff                 //关闭所有日志
 )
+
+var LogLevelNameMap = map[string]LogLevel{
+	"debug": LogLevelDebug,
+	"info":  LogLevelInfo,
+	"warn":  LogLevelWarn,
+	"error": LogLevelError,
+	"fatal": LogLevelFatal,
+	"off":   LogLevelAllOff,
+}
 
 type Log struct {
 	logger         [32]ILogger
@@ -219,6 +227,14 @@ func (r *Log) SetLevel(level LogLevel) {
 	r.level = level
 }
 
+func (r *Log) SetLevelByName(name string) bool {
+	level, ok := LogLevelNameMap[name]
+	if ok {
+		r.SetLevel(level)
+	}
+	return ok
+}
+
 func isLogStop() bool {
 	return stopForLog == 1
 }
@@ -298,7 +314,7 @@ func NewLog(bufsize int, logger ...ILogger) *Log {
 		bufsize:        bufsize,
 		cwrite:         make(chan string, bufsize),
 		ctimeout:       make(chan *FileLogger, 32),
-		level:          LogLevelAllOn,
+		level:          LogLevelDebug,
 		preLoggerCount: -1,
 	}
 	for _, l := range logger {
