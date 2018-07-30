@@ -220,7 +220,7 @@ func main() {
 	h.RegisterMsg(&GetGamerLevel{}, test)
 
 	antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, h, pf)
-	antnet.WaitForSystemExit()
+	antnet.WaitForSystemExit(nil)
 }
 ```
 在这个示例中，我们建立了一个基于命令的网络应用。  
