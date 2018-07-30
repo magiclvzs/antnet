@@ -73,9 +73,16 @@ func timerTick() {
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
+	var lastSync uint
+	var count uint
 	Go(func() {
 		for IsRuning() {
 			Sleep(1)
+			count++
+			if count%Config.TimeSyncInterval != 0 {
+				continue
+			}
+			lastSync = count
 			NowTick = time.Now().UnixNano() / 1000000
 			Timestamp = NowTick / 1000
 		}
