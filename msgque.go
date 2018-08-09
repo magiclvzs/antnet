@@ -277,7 +277,7 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 		msg.Head.Flags -= FlagCompress
 		msg.Head.Len = uint32(len(msg.Data))
 	}
-	if r.parser != nil && msg.Data != nil {
+	if r.parser != nil {
 		mp, err := r.parser.ParseC2S(msg)
 		if err == nil {
 			msg.IMsgParser = mp
