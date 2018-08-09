@@ -9,11 +9,14 @@ type pBParser struct {
 }
 
 func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
-	if msg == nil || msg.Data == nil || len(msg.Data) == 0 {
+	if msg == nil {
 		return nil, ErrPBUnPack
 	}
 
 	if msg.Head == nil {
+		if len(msg.Data) == 0 {
+			return nil, ErrPBUnPack
+		}
 		for _, p := range r.typMap {
 			if p.C2S() != nil {
 				err := PBUnPack(msg.Data, p.C2S())
@@ -26,9 +29,11 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 		}
 	} else if p, ok := r.msgMap[msg.Head.CmdAct()]; ok {
 		if p.C2S() != nil {
-			err := PBUnPack(msg.Data, p.C2S())
-			if err != nil {
-				return nil, err
+			if len(msg.Data) > 0 {
+				err := PBUnPack(msg.Data, p.C2S())
+				if err != nil {
+					return nil, err
+				}
 			}
 			p.parser = r
 			return &p, nil
