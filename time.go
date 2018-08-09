@@ -149,8 +149,6 @@ func GetHour(timestamp int64, timezone int) int {
 * @return uint32_t 返回不同的天数
  */
 func IsDiffDay(now, old int64, timezone int) int {
-	now += int64(timezone * 3600)
-	old += int64(timezone * 3600)
 	return int((now / 86400) - (old / 86400))
 }
 
