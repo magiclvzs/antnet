@@ -168,6 +168,8 @@ func IsDiffHour(now, old int64, hour, timezone int) bool {
 	if diff == 1 {
 		if GetHour23(old, timezone) > hour {
 			return GetHour23(now, timezone) >= hour
+		} else {
+			return true
 		}
 	} else if diff >= 2 {
 		return true
