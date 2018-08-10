@@ -117,8 +117,8 @@ pf := &antnet.Parser{Type: antnet.ParserTypeCmd}
 上面的代码就定义了一个基于cmd模式的解析器。    
 
 定义好解析之后，就需要注册解析器需要解析的消息，解析器支持两种模式：  
-1. 基于MsgTypeMsg的，根据cmd和act进行解析，支持上面三种类型，使用Register进行注册。
-2. 基于MsgTypeCmd的，可以支持ParserTypeCmd和ParserTypeCmd类型，这种消息往往没有消息头，使用RegisterMsg进行注册。  
+1. 基于MsgTypeMsg的，根据cmd和act进行解析，使用Register进行注册。
+2. 基于MsgTypeCmd的，这种消息往往没有消息头，使用RegisterMsg进行注册。  
 两种类型的注册函数定义如下：    
 ```
 Register(cmd uint8, act uint8, c2s interface{}, s2c interface{})
@@ -148,6 +148,9 @@ pf.RegisterMsg(&GetGamerLevel{}, nil)
 这样我们就把这个消息注册到了解析器
 #### protobuf解析器
 protobuf解析器用于解析pb类型的数据
+
+#### 自定义解析器
+但上述的解析器无法满足要求时，可以自定义解析器，只需要实现IParserFactory即可   
 
 ## 处理器
 处理器用于处理消息，一个处理器应该实现IMsgHandler消息接口：
