@@ -313,11 +313,6 @@ type IMsgHandler interface {
 	GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc //根据消息获得处理函数
 }
 
-type IMsgRegister interface {
-	Register(cmd, act uint8, fun HandlerFunc)
-	RegisterMsg(v interface{}, fun HandlerFunc)
-}
-
 type DefMsgHandler struct {
 	msgMap  map[int]HandlerFunc
 	typeMap map[reflect.Type]HandlerFunc
