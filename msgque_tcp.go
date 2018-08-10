@@ -425,7 +425,7 @@ func (r *tcpMsgQue) Reconnect(t int) {
 	})
 }
 
-func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser, user interface{}) *tcpMsgQue {
+func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory, user interface{}) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgqueId, 1),
@@ -453,7 +453,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 	return &msgque
 }
 
-func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser *Parser) *tcpMsgQue {
+func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgqueId, 1),

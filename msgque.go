@@ -75,7 +75,7 @@ type msgQue struct {
 
 	handler       IMsgHandler //处理者
 	parser        IParser
-	parserFactory *Parser
+	parserFactory IParserFactory
 	timeout       int //传输超时
 	lastTick      int64
 
@@ -427,7 +427,7 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) 
 	return nil
 }
 
-func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser *Parser, user interface{}) IMsgQue {
+func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser IParserFactory, user interface{}) IMsgQue {
 	msgque := newTcpConn(netype, addr, nil, typ, handler, parser, user)
 	if handler.OnNewMsgQue(msgque) {
 		msgque.Reconnect(0)

@@ -23,7 +23,7 @@ antnet尽可能把功能相关的代码组织到一块，让你能快速找到�
 ## 依赖项
 github.com/golang/protobuf   
 github.com/vmihailenco/msgpack   
-github.com/go-redis/redis
+github.com/go-redis/redis   
 github.com/gorilla/websocket
 
 ## 生产环境
@@ -82,28 +82,30 @@ const (
 ```
 
 ## 解析器
-antnet目前有三种解析器类型：  
+antnet目前有六种解析器类型：  
 ```
 type ParserType int
 
 const (
-	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
-	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
-	ParserTypeRaw                   //不做任何解析
+	ParserTypePB      ParserType = iota //protobuf类型，用于和客户端交互
+	ParserTypeCmd                       //cmd类型，类似telnet指令，用于直接和程序交互
+	ParserTypeJson                      //json类型，可以用于客户端或者服务器之间交互
+	ParserTypeMsgpack                   //msgpack类型，可以用于客户端或者服务器之间交互
+	ParserTypeCustom                    //自定义类型
+	ParserTypeRaw                       //不做任何解析
 )   
-```
-从老版本移除了json解析器，因为除短链接的游戏外，一般json只在认证服使用，逻辑上一般是pb协议。    
-这三种类型的解析器，都可以用antnet.Parser来创建。    
+```    
+这六种类型的解析器，都可以用antnet.Parser来创建。    
 每个解析器需要一个Type字段和一个ErrType字段定义，Type字段表示了消息解析器的类型，而ErrType字段则决定了消息解析失败之后默认的行为,ErrType目前有4中方式：    
 ```
 type ParserType int
 
 const (
-	ParserTypePB   ParserType = iota //protobuf类型，用于和客户端交互
-	ParserTypeJson                   //json类型，可以用于客户端或者服务器之间交互
-	ParserTypeCmd                    //cmd类型，类似telnet指令，用于直接和程序交互
-	ParserTypeRaw                    //不做任何解析
-)
+	ParseErrTypeSendRemind ParseErrType = iota //消息解析失败发送提醒消息
+	ParseErrTypeContinue                       //消息解析失败则跳过本条消息
+	ParseErrTypeAlways                         //消息解析失败依然处理
+	ParseErrTypeClose                          //消息解析失败则关闭连接
+)   
 ```
 
 默认的解析器Type是pb类型的，而错误处理是一旦解析出错给客户端发送提示消息。    

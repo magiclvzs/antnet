@@ -237,7 +237,7 @@ func (r *udpMsgQue) listen() {
 	r.Stop()
 }
 
-func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr *net.UDPAddr) *udpMsgQue {
+func newUdpAccept(conn *net.UDPConn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory, addr *net.UDPAddr) *udpMsgQue {
 	msgque := udpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgqueId, 1),
