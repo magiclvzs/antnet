@@ -111,7 +111,9 @@ func WaitForSystemExit(atexit ...func()) {
 		Stop()
 	}
 	for _, v := range atexit {
-		v()
+		if v != nil {
+			v()
+		}
 	}
 	atexitMapSync.Lock()
 	for _, v := range atexitMap {

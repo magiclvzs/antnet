@@ -478,7 +478,7 @@ func newTcpAccept(conn net.Conn, msgtyp MsgType, handler IMsgHandler, parser IPa
 	return &msgque
 }
 
-func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, parser *Parser, addr string) *tcpMsgQue {
+func newTcpListen(listener net.Listener, msgtyp MsgType, handler IMsgHandler, parser IParserFactory, addr string) *tcpMsgQue {
 	msgque := tcpMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgqueId, 1),

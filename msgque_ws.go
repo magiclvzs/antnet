@@ -203,7 +203,7 @@ func newWsAccept(conn *websocket.Conn, msgtyp MsgType, handler IMsgHandler, pars
 	return &msgque
 }
 
-func newWsListen(addr, url string, msgtyp MsgType, handler IMsgHandler, parser *Parser) *wsMsgQue {
+func newWsListen(addr, url string, msgtyp MsgType, handler IMsgHandler, parser IParserFactory) *wsMsgQue {
 	msgque := wsMsgQue{
 		msgQue: msgQue{
 			id:            atomic.AddUint32(&msgqueId, 1),

@@ -370,7 +370,7 @@ func (r *EchoMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool {
 	return true
 }
 
-func StartServer(addr string, typ MsgType, handler IMsgHandler, parser *Parser) error {
+func StartServer(addr string, typ MsgType, handler IMsgHandler, parser IParserFactory) error {
 	addrs := strings.Split(addr, "://")
 	if addrs[0] == "tcp" || addrs[0] == "all" {
 		listen, err := net.Listen("tcp", addrs[1])
