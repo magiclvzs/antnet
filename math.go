@@ -22,8 +22,11 @@ func RandNumber(number int) int {
 
 //min和max之间的随机数
 func RandNumBetween(min, max int) int {
-	if min >= max || min == 0 || max == 0 {
-		return max
+	if min == max {
+		return min
+	}
+	if min > max {
+		min, max = max, min
 	}
 	return rand.Intn(max-min) + min
 }
