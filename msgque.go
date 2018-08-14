@@ -62,8 +62,9 @@ type IMsgQue interface {
 	SetUser(user interface{})
 	GetUser() interface{}
 
-	SetGroup(group string)
-	ClearGroup(group string)
+	SetGroupId(group string)
+	DelGroupId(group string)
+	ClearGroupId(group string)
 	IsInGroup(group string) bool
 
 	tryCallback(msg *Message) (re bool)
@@ -161,7 +162,7 @@ func (r *msgQue) Reconnect(t int) {
 
 }
 
-func (r *msgQue) SetGroup(group string) {
+func (r *msgQue) SetGroupId(group string) {
 	r.callbackLock.Lock()
 	if r.group == nil {
 		r.group = make(map[string]int)
@@ -170,7 +171,15 @@ func (r *msgQue) SetGroup(group string) {
 	r.callbackLock.Unlock()
 }
 
-func (r *msgQue) ClearGroup(group string) {
+func (r *msgQue) DelGroupId(group string) {
+	r.callbackLock.Lock()
+	if r.group != nil {
+		delete(r.group, group)
+	}
+	r.callbackLock.Unlock()
+}
+
+func (r *msgQue) ClearGroupId(group string) {
 	r.callbackLock.Lock()
 	r.group = nil
 	r.callbackLock.Unlock()
