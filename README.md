@@ -11,7 +11,7 @@ import (
 
 func main() {
 	antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, &antnet.EchoMsgHandler{}, nil)
-	antnet.WaitForSystemExit(nil)
+	antnet.WaitForSystemExit()
 }
 ```
 通过上面的代码我们就实现了一个最简单的echo服务器。   
@@ -237,7 +237,7 @@ func main() {
 	h.RegisterMsg(&GetGamerLevel{}, test)
 
 	antnet.StartServer("tcp://:6666", antnet.MsgTypeCmd, h, pf)
-	antnet.WaitForSystemExit(nil)
+	antnet.WaitForSystemExit()
 }
 ```
 在这个示例中，我们建立了一个基于命令的网络应用。  

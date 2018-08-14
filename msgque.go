@@ -62,6 +62,10 @@ type IMsgQue interface {
 	SetUser(user interface{})
 	GetUser() interface{}
 
+	SetGroup(group string)
+	ClearGroup(group string)
+	IsInGroup(group string) bool
+
 	tryCallback(msg *Message) (re bool)
 }
 
@@ -83,6 +87,7 @@ type msgQue struct {
 	available    bool
 	sendFast     bool
 	callback     map[int]chan *Message
+	group        map[string]int
 	user         interface{}
 	callbackLock sync.Mutex
 	gmsgId       uint16
@@ -154,6 +159,31 @@ func (r *msgQue) GetTimeout() int {
 
 func (r *msgQue) Reconnect(t int) {
 
+}
+
+func (r *msgQue) SetGroup(group string) {
+	r.callbackLock.Lock()
+	if r.group == nil {
+		r.group = make(map[string]int)
+	}
+	r.group[group] = 0
+	r.callbackLock.Unlock()
+}
+
+func (r *msgQue) ClearGroup(group string) {
+	r.callbackLock.Lock()
+	r.group = nil
+	r.callbackLock.Unlock()
+}
+
+func (r *msgQue) IsInGroup(group string) bool {
+	re := false
+	r.callbackLock.Lock()
+	if r.group != nil {
+		_, re = r.group[group]
+	}
+	r.callbackLock.Unlock()
+	return re
 }
 
 func (r *msgQue) Send(m *Message) (re bool) {
@@ -296,6 +326,7 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 			}
 		}
 	}
+	msgque.tryCallback(msg)
 	f := r.handler.GetHandlerFunc(msgque, msg)
 	if f == nil {
 		f = r.handler.OnProcessMsg
@@ -323,10 +354,6 @@ func (r *DefMsgHandler) OnDelMsgQue(msgque IMsgQue)                     {}
 func (r *DefMsgHandler) OnProcessMsg(msgque IMsgQue, msg *Message) bool { return true }
 func (r *DefMsgHandler) OnConnectComplete(msgque IMsgQue, ok bool) bool { return true }
 func (r *DefMsgHandler) GetHandlerFunc(msgque IMsgQue, msg *Message) HandlerFunc {
-	if msgque.tryCallback(msg) {
-		return r.OnProcessMsg
-	}
-
 	if msg.Head == nil {
 		if r.typeMap != nil {
 			if f, ok := r.typeMap[reflect.TypeOf(msg.C2S())]; ok {

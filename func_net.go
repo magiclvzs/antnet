@@ -27,6 +27,12 @@ func Send(msg *Message, fun func(msgque IMsgQue) bool) {
 	close(gmsg.c)
 }
 
+func SendGroup(group string, msg *Message) {
+	Send(msg, func(msgque IMsgQue) bool {
+		return msgque.IsInGroup(group)
+	})
+}
+
 func HttpGetWithBasicAuth(url, name, passwd string) (string, error, *http.Response) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
