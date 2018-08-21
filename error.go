@@ -37,9 +37,10 @@ var (
 	ErrCSVParse       = NewError("csv解析错误", 14)
 	ErrConfigPath     = NewError("配置路径错误", 50)
 
-	ErrFileRead   = NewError("文件读取错误", 100)
-	ErrDBDataType = NewError("数据库数据类型错误", 101)
-	ErrNetTimeout = NewError("网络超时", 200)
+	ErrFileRead       = NewError("文件读取错误", 100)
+	ErrDBDataType     = NewError("数据库数据类型错误", 101)
+	ErrNetTimeout     = NewError("网络超时", 200)
+	ErrNetUnreachable = NewError("网络不可达", 201)
 
 	ErrErrIdNotFound = NewError("错误没有对应的错误码", 255)
 )

@@ -335,7 +335,9 @@ func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
 			}
 		}
 	}
-	msgque.tryCallback(msg)
+	if msgque.tryCallback(msg) {
+		return true
+	}
 	f := r.handler.GetHandlerFunc(msgque, msg)
 	if f == nil {
 		f = r.handler.OnProcessMsg
