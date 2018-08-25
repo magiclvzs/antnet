@@ -1,7 +1,9 @@
 package antnet
 
 import (
+	"bytes"
 	"crypto/md5"
+	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"os"
@@ -283,4 +285,24 @@ func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {
 		LogError("parse failed type not found type:%v data:%v", kind, data)
 		return nil, errors.New("type not found")
 	}
+}
+
+func GobPack(e interface{}) ([]byte, error) {
+	var bio bytes.Buffer
+	enc := gob.NewEncoder(&bio)
+	err := enc.Encode(e)
+	if err != nil {
+		return nil, ErrGobPack
+	}
+	return bio.Bytes(), nil
+}
+
+func GobUnPack(data []byte, msg interface{}) error {
+	bio := bytes.NewBuffer(data)
+	enc := gob.NewDecoder(bio)
+	err := enc.Decode(msg)
+	if err != nil {
+		return ErrGobUnPack
+	}
+	return nil
 }

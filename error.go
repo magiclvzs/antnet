@@ -35,6 +35,8 @@ var (
 	ErrMsgLenTooShort = NewError("数据过短", 12)
 	ErrHttpRequest    = NewError("http请求错误", 13)
 	ErrCSVParse       = NewError("csv解析错误", 14)
+	ErrGobPack        = NewError("gob打包错误", 15)
+	ErrGobUnPack      = NewError("gob解析错误", 16)
 	ErrConfigPath     = NewError("配置路径错误", 50)
 
 	ErrFileRead       = NewError("文件读取错误", 100)
