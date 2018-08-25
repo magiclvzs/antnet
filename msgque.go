@@ -67,6 +67,8 @@ type IMsgQue interface {
 	ClearGroupId(group string)
 	IsInGroup(group string) bool
 
+	SetMultiplex(multiplex bool) bool
+
 	tryCallback(msg *Message) (re bool)
 }
 
@@ -87,6 +89,7 @@ type msgQue struct {
 	init         bool
 	available    bool
 	sendFast     bool
+	multiplex    bool
 	callback     map[int]chan *Message
 	group        map[string]int
 	user         interface{}
@@ -193,6 +196,12 @@ func (r *msgQue) IsInGroup(group string) bool {
 	}
 	r.callbackLock.Unlock()
 	return re
+}
+
+func (r *msgQue) SetMultiplex(multiplex bool) bool {
+	t := r.multiplex
+	r.multiplex = multiplex
+	return t
 }
 
 func (r *msgQue) Send(m *Message) (re bool) {
@@ -304,8 +313,17 @@ func (r *msgQue) baseStop() {
 	msgqueMapSync.Unlock()
 	LogInfo("msgque close id:%d", r.id)
 }
-
 func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
+	if r.multiplex {
+		Go(func() {
+			r.processMsgTrue(msgque, msg)
+		})
+	} else {
+		return r.processMsgTrue(msgque, msg)
+	}
+	return true
+}
+func (r *msgQue) processMsgTrue(msgque IMsgQue, msg *Message) bool {
 	if msg.Head != nil && msg.Head.Flags&FlagCompress > 0 && msg.Data != nil {
 		data, err := GZipUnCompress(msg.Data)
 		if err != nil {
