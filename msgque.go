@@ -52,6 +52,7 @@ type IMsgQue interface {
 	SendByteStr(str []byte) (re bool)
 	SendByteStrLn(str []byte) (re bool)
 	SendCallback(m *Message, c chan *Message) (re bool)
+	DelCallback(m *Message)
 	SetSendFast()
 	SetTimeout(t int)
 	GetTimeout() int
@@ -242,6 +243,15 @@ func (r *msgQue) SendCallback(m *Message, c chan *Message) (re bool) {
 	return true
 }
 
+func (r *msgQue) DelCallback(m *Message)  {
+	if r.callback == nil {
+		return
+	}
+	r.callbackLock.Lock()
+	delete(r.callback, m.Tag())
+	r.callbackLock.Unlock()
+}
+
 func (r *msgQue) SendString(str string) (re bool) {
 	return r.Send(&Message{Data: []byte(str)})
 }
@@ -305,7 +315,11 @@ func (r *msgQue) baseStop() {
 	}
 
 	for k, v := range r.callback {
-		v <- nil
+		Try(func() {
+			v <- nil
+		}, func(i interface{}) {
+
+		})
 		delete(r.callback, k)
 	}
 	msgqueMapSync.Lock()
