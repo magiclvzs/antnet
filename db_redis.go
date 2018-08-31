@@ -241,6 +241,13 @@ func NewRedisScript(commit, str string) int {
 	return cmd
 }
 
+func GetRedisScript(cmd int) string {
+	if s, ok := scriptMap[cmd]; ok{
+		return s
+	}
+	return ""
+}
+
 var redisManagers []*RedisManager
 
 func NewRedisManager(conf *RedisConfig) *RedisManager {
