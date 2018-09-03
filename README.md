@@ -41,8 +41,8 @@ wsserver是一个websocket的测试框架，用于展示如何使用antnet
 antnet的正式框架为union，只是有些细节我还在斟酌，想好之后才会上传代码
 	
 ## 代码说明
-antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等
-相关的说明我会发布在知乎:
+antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等   
+相关的说明我会发布在知乎:   
 [整体设计原则](https://zhuanlan.zhihu.com/p/43600745)   
 [UDP设计](https://zhuanlan.zhihu.com/p/41572002)   
 [TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)   
