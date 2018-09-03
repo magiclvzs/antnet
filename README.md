@@ -43,9 +43,9 @@ antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
 ## 代码说明
 	antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等
 	相关的说明我会发布在知乎:
-	https://zhuanlan.zhihu.com/p/43600745 设计原则
-	https://zhuanlan.zhihu.com/p/41572002 UDP篇
-	https://zhuanlan.zhihu.com/p/43055894 TCP篇（1）
+	[整体设计原则](https://zhuanlan.zhihu.com/p/43600745)
+	[UDP设计](https://zhuanlan.zhihu.com/p/41572002)
+	[TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)
 
 ## 架构
 |---------------------------------------------------|   
