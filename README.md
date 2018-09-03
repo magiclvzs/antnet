@@ -17,8 +17,13 @@ func main() {
 通过上面的代码我们就实现了一个最简单的echo服务器。   
 现在打开命令行，执行telent 127.0.0.1 6666，输入一个字符串，回车后你将收到原样的回复消息。    
 
-## 代码组织    
+## antnet设计    
 antnet尽可能把功能相关的代码组织到一块，让你能快速找到代码，比如parser打头的文件表示解析器相关，msgque打头的文件表示消息队列相关。    
+antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等   
+相关的说明我会发布在知乎:   
+[整体设计原则](https://zhuanlan.zhihu.com/p/43600745)   
+[UDP设计](https://zhuanlan.zhihu.com/p/41572002)   
+[TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)   
 
 ## 依赖项
 github.com/golang/protobuf   
@@ -39,13 +44,6 @@ https://github.com/magiclvzs/wsserver
 wsserver是一个websocket的测试框架，用于展示如何使用antnet   
 只有不到60行逻辑代码，实现了基于websocket+protobuf的聊天系统   
 antnet的正式框架为union，只是有些细节我还在斟酌，想好之后才会上传代码   
-	
-## 代码说明
-antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等   
-相关的说明我会发布在知乎:   
-[整体设计原则](https://zhuanlan.zhihu.com/p/43600745)   
-[UDP设计](https://zhuanlan.zhihu.com/p/41572002)   
-[TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)   
 
 ## 架构
 |---------------------------------------------------|   
