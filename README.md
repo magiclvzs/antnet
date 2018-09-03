@@ -35,17 +35,17 @@ antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
 2.值写入了一半，如果对32位的值在16位架构下面确实可能，但现在服务器基本都是64位架构的，亦不存在此问题。
 
 ## 测试框架
-	https://github.com/magiclvzs/wsserver
-	wsserver是一个websocket的测试框架，用于展示如何使用antnet
-	只有不到60行逻辑代码，实现了基于websocket+protobuf的聊天系统
-	antnet的正式框架为union，只是有些细节我还在斟酌，想好之后才会上传代码
+https://github.com/magiclvzs/wsserver
+wsserver是一个websocket的测试框架，用于展示如何使用antnet
+只有不到60行逻辑代码，实现了基于websocket+protobuf的聊天系统
+antnet的正式框架为union，只是有些细节我还在斟酌，想好之后才会上传代码
 	
 ## 代码说明
-	antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等
-	相关的说明我会发布在知乎:
-	[整体设计原则](https://zhuanlan.zhihu.com/p/43600745)
-	[UDP设计](https://zhuanlan.zhihu.com/p/41572002)
-	[TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)
+antnet的代码都是经过深思熟虑的，比如TCP连接的关闭时机等等
+相关的说明我会发布在知乎:
+[整体设计原则](https://zhuanlan.zhihu.com/p/43600745)
+[UDP设计](https://zhuanlan.zhihu.com/p/41572002)
+[TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)
 
 ## 架构
 |---------------------------------------------------|   
