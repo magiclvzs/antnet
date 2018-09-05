@@ -23,6 +23,7 @@ antnet尽可能把功能相关的代码组织到一块，让你能快速找到�
 [整体设计原则](https://zhuanlan.zhihu.com/p/43600745)   
 [UDP设计](https://zhuanlan.zhihu.com/p/41572002)   
 [TCP设计（1）](https://zhuanlan.zhihu.com/p/43055894)   
+[日志设计] https://zhuanlan.zhihu.com/p/43775835   
 
 ## 依赖项
 github.com/golang/protobuf   
