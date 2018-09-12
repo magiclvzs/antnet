@@ -158,6 +158,7 @@ func Daemon(skip ...string) {
 func GetStatis() *Statis {
 	statis.GoCount = int(gocount)
 	statis.MsgqueCount = len(msgqueMap)
+	statis.PoolGoCount = poolGoCount
 	return statis
 }
 

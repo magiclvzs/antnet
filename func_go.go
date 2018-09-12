@@ -5,6 +5,17 @@ import (
 )
 
 func Go(fn func()) {
+	pc := Config.PoolSize + 1
+	select {
+	case poolChan <- fn:
+		return
+	default:
+		pc = atomic.AddInt32(&poolGoCount, 1)
+		if pc > Config.PoolSize {
+			atomic.AddInt32(&poolGoCount, -1)
+		}
+	}
+
 	waitAll.Add(1)
 	var debugStr string
 	id := atomic.AddUint32(&goid, 1)
@@ -15,6 +26,15 @@ func Go(fn func()) {
 	}
 	go func() {
 		Try(fn, nil)
+		for pc <= Config.PoolSize {
+			select {
+			case <-stopChanForGo:
+				pc = Config.PoolSize + 1
+			case nfn := <-poolChan:
+				Try(nfn, nil)
+			}
+		}
+
 		waitAll.Done()
 		c = atomic.AddInt32(&gocount, -1)
 
@@ -24,10 +44,7 @@ func Go(fn func()) {
 	}()
 }
 
-func Go2(fn func(cstop chan struct{})) bool {
-	if IsStop() {
-		return false
-	}
+func Go2(fn func(cstop chan struct{})) {
 	waitAll.Add(1)
 	var debugStr string
 	id := atomic.AddUint32(&goid, 1)
@@ -45,7 +62,6 @@ func Go2(fn func(cstop chan struct{})) bool {
 			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
 	}()
-	return true
 }
 
 func GoArgs(fn func(...interface{}), args ...interface{}) {

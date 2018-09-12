@@ -14,6 +14,7 @@ type Statis struct {
 	StartTime   time.Time
 	LastPanic   int
 	PanicCount  int32
+	PoolGoCount int32
 }
 
 var statis = &Statis{}
@@ -73,6 +74,9 @@ var stopChanForGo = make(chan struct{})
 var stopChanForLog = make(chan struct{})
 var stopChanForSys = make(chan os.Signal, 1)
 
+var poolChan = make(chan func())
+var poolGoCount int32
+
 var StartTick int64
 var NowTick int64
 var Timestamp int64
@@ -81,7 +85,8 @@ var Config = struct {
 	AutoCompressLen  uint32
 	UdpServerGoCnt   int
 	TimeSyncInterval uint
-}{0, 64, 10}
+	PoolSize         int32
+}{0, 64, 10, 50000}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {
