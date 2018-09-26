@@ -24,14 +24,14 @@ type cmdParseNode struct {
 	next    map[string]*cmdParseNode
 	prev    *cmdParseNode
 }
-type cmdParser struct {
+type CmdParser struct {
 	*Parser
 	node   *cmdParseNode
 	values []interface{}
 	match  CmdMatchType
 }
 
-func (r *cmdParser) ParseC2S(msg *Message) (IMsgParser, error) {
+func (r *CmdParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	p, ok := r.parserString(string(msg.Data))
 	if ok {
 		return p, nil
@@ -40,7 +40,7 @@ func (r *cmdParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	return nil, ErrCmdUnPack
 }
 
-func (r *cmdParser) PackMsg(v interface{}) []byte {
+func (r *CmdParser) PackMsg(v interface{}) []byte {
 	data, _ := JsonPack(v)
 	if data != nil {
 		var out bytes.Buffer
@@ -52,7 +52,7 @@ func (r *cmdParser) PackMsg(v interface{}) []byte {
 	return data
 }
 
-func (r *cmdParser) GetRemindMsg(err error, t MsgType) *Message {
+func (r *CmdParser) GetRemindMsg(err error, t MsgType) *Message {
 	if t == MsgTypeMsg {
 		return nil
 	} else {
@@ -60,7 +60,7 @@ func (r *cmdParser) GetRemindMsg(err error, t MsgType) *Message {
 	}
 }
 
-func (r *cmdParser) parserString(s string) (IMsgParser, bool) {
+func (r *CmdParser) parserString(s string) (IMsgParser, bool) {
 	if r.node == nil {
 		r.node = r.cmdRoot
 	}

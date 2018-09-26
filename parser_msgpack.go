@@ -4,11 +4,11 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-type msgpackParser struct {
+type MsgpackParser struct {
 	*Parser
 }
 
-func (r *msgpackParser) ParseC2S(msg *Message) (IMsgParser, error) {
+func (r *MsgpackParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrMsgPackUnPack
 	}
@@ -43,12 +43,12 @@ func (r *msgpackParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	return nil, ErrMsgPackUnPack
 }
 
-func (r *msgpackParser) PackMsg(v interface{}) []byte {
+func (r *MsgpackParser) PackMsg(v interface{}) []byte {
 	data, _ := MsgPackPack(v)
 	return data
 }
 
-func (r *msgpackParser) GetRemindMsg(err error, t MsgType) *Message {
+func (r *MsgpackParser) GetRemindMsg(err error, t MsgType) *Message {
 	if t == MsgTypeMsg {
 		return NewErrMsg(err)
 	} else {

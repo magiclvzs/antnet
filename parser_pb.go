@@ -4,11 +4,11 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type pBParser struct {
+type PBParser struct {
 	*Parser
 }
 
-func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
+func (r *PBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrPBUnPack
 	}
@@ -43,12 +43,12 @@ func (r *pBParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	return nil, ErrPBUnPack
 }
 
-func (r *pBParser) PackMsg(v interface{}) []byte {
+func (r *PBParser) PackMsg(v interface{}) []byte {
 	data, _ := PBPack(v)
 	return data
 }
 
-func (r *pBParser) GetRemindMsg(err error, t MsgType) *Message {
+func (r *PBParser) GetRemindMsg(err error, t MsgType) *Message {
 	if t == MsgTypeMsg {
 		return NewErrMsg(err)
 	} else {

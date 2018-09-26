@@ -2,11 +2,11 @@ package antnet
 
 import "encoding/json"
 
-type jsonParser struct {
+type JsonParser struct {
 	*Parser
 }
 
-func (r *jsonParser) ParseC2S(msg *Message) (IMsgParser, error) {
+func (r *JsonParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	if msg == nil {
 		return nil, ErrJsonUnPack
 	}
@@ -41,12 +41,12 @@ func (r *jsonParser) ParseC2S(msg *Message) (IMsgParser, error) {
 	return nil, ErrJsonUnPack
 }
 
-func (r *jsonParser) PackMsg(v interface{}) []byte {
+func (r *JsonParser) PackMsg(v interface{}) []byte {
 	data, _ := JsonPack(v)
 	return data
 }
 
-func (r *jsonParser) GetRemindMsg(err error, t MsgType) *Message {
+func (r *JsonParser) GetRemindMsg(err error, t MsgType) *Message {
 	if t == MsgTypeMsg {
 		return NewErrMsg(err)
 	} else {

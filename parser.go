@@ -99,17 +99,17 @@ func (r *Parser) Get() IParser {
 	switch r.Type {
 	case ParserTypePB:
 		if r.parser == nil {
-			r.parser = &pBParser{Parser: r}
+			r.parser = &PBParser{Parser: r}
 		}
 	case ParserTypeCmd:
-		return &cmdParser{Parser: r}
+		return &CmdParser{Parser: r}
 	case ParserTypeJson:
 		if r.parser == nil {
-			r.parser = &jsonParser{Parser: r}
+			r.parser = &JsonParser{Parser: r}
 		}
 	case ParserTypeMsgpack:
 		if r.parser == nil {
-			r.parser = &msgpackParser{Parser: r}
+			r.parser = &MsgpackParser{Parser: r}
 		}
 	case ParserTypeCustom:
 		return nil
