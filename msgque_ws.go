@@ -91,6 +91,7 @@ func (r *wsMsgQue) writeCmd() {
 		}
 
 		if m == nil || m.Data == nil {
+			m = nil
 			continue
 		}
 		err := r.conn.WriteMessage(websocket.BinaryMessage, m.Data)

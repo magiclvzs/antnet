@@ -252,7 +252,8 @@ func (r *tcpMsgQue) writeCmd() {
 			}
 		}
 
-		if m == nil {
+		if m == nil || m.Data == nil {
+			m = nil
 			continue
 		}
 		n, err := r.conn.Write(m.Data[writeCount:])
