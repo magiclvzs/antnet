@@ -60,7 +60,7 @@ func (r *tcpMsgQue) RemoteAddr() string {
 	if r.conn != nil {
 		return r.conn.RemoteAddr().String()
 	}
-	return ""
+	return r.address
 }
 
 func (r *tcpMsgQue) readMsg() {
