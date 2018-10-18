@@ -46,12 +46,23 @@ func StrReplaceMult(s string, oldnew ...string) string {
 	return r.Replace(s)
 }
 
-func TrimStr(s string) string {
+func TrimStrSpace(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func StrTrim(s string) string {
+func StrTrimSpace(s string) string {
 	return strings.TrimSpace(s)
+}
+
+func TrimStr(s string, cutset []string) string {
+	for _, v := range cutset{
+		s = strings.Trim(s, v)
+	}
+	return s
+}
+
+func StrTrim(s string, cutset []string) string {
+	return TrimStr(s, cutset)
 }
 
 func StrContains(s, substr string) bool {
