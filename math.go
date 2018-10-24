@@ -17,6 +17,9 @@ func Sqrt(x float64) float64 {
 
 //取0-number区间的随机值
 func RandNumber(number int) int {
+	if(number == 0) {
+		return 0
+	}
 	return rand.Intn(number)
 }
 
