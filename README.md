@@ -40,7 +40,7 @@ antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
 2.值写入了一半，如果对32位的值在16位架构下面确实可能，但现在服务器基本都是64位架构的，亦不存在此问题。
 
 ## 商业案例
-![image](https://github.com/magiclvzs/arts/blob/master/logo_01.png)
+![image](https://github.com/magiclvzs/arts/blob/master/logo_02.png)
 	
 
 ## 测试框架
