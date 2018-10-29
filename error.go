@@ -37,6 +37,7 @@ var (
 	ErrCSVParse       = NewError("csv解析错误", 14)
 	ErrGobPack        = NewError("gob打包错误", 15)
 	ErrGobUnPack      = NewError("gob解析错误", 16)
+	ErrServePanic     = NewError("服务器内部错误", 17)
 	ErrConfigPath     = NewError("配置路径错误", 50)
 
 	ErrFileRead       = NewError("文件读取错误", 100)
