@@ -137,18 +137,29 @@ func Daemon(skip ...string) {
 	if os.Getppid() != 1 {
 		filePath, _ := filepath.Abs(os.Args[0])
 		newCmd := []string{}
-		for _, v := range os.Args {
-			add := true
+		add := 0
+		for _, v := range os.Args[1:] {
+			if add == 1 {
+				add = 0
+				continue
+			} else {
+				add = 0
+			}
 			for _, s := range skip {
 				if strings.Contains(v, s) {
-					add = false
+					if strings.Contains(v, "--") {
+						add = 2
+					} else {
+						add = 1
+					}
 					break
 				}
 			}
-			if add {
+			if add == 0 {
 				newCmd = append(newCmd, v)
 			}
 		}
+		Println("go deam args:", newCmd)
 		cmd := exec.Command(filePath)
 		cmd.Args = newCmd
 		cmd.Start()
