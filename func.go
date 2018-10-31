@@ -136,7 +136,7 @@ func WaitForSystemExit(atexit ...func()) {
 func Daemon(skip ...string) {
 	if os.Getppid() != 1 {
 		filePath, _ := filepath.Abs(os.Args[0])
-		newCmd := []string{}
+		newCmd := []string{filePath}
 		add := 0
 		for _, v := range os.Args[1:] {
 			if add == 1 {
