@@ -176,7 +176,12 @@ func (r *wsMsgQue) listen() {
 			})
 		}
 	})
-	r.listener.ListenAndServe()
+
+	if Config.EnableWss && Config.SSLCrtPath != "" && Config.SSLKeyPath != "" {
+		r.listener.ListenAndServeTLS(Config.SSLCrtPath, Config.SSLKeyPath)
+	} else {
+		r.listener.ListenAndServe()
+	}
 }
 
 func newWsAccept(conn *websocket.Conn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory) *wsMsgQue {

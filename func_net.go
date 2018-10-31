@@ -163,11 +163,37 @@ func GetSelfIp(ifnames ...string) []string {
 	return allIp
 }
 
+func IsIntraIp(ip string) bool {
+	if ip == "127.0.0.1" {
+		return true
+	}
+	ips := strings.Split(ip, ".")
+	ipA := ips[0]
+	if ipA == "10" {
+		return true
+	}
+	ipB := ips[1]
+
+	if ipA == "192" {
+		if ipB == "168" {
+			return true
+		}
+	}
+
+	if ipA == "172" {
+		ipb := Atoi(ipB)
+		if ipb >= 16 && ipb <= 31 {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetSelfIntraIp(ifnames ...string) (ips []string) {
 	all := GetSelfIp(ifnames...)
 	for _, v := range all {
-		ipA := strings.Split(v, ".")[0]
-		if ipA == "10" || ipA == "172" || ipA == "192" || v == "127.0.0.1" {
+		if IsIntraIp(v) {
 			ips = append(ips, v)
 		}
 	}
@@ -178,8 +204,7 @@ func GetSelfIntraIp(ifnames ...string) (ips []string) {
 func GetSelfExtraIp(ifnames ...string) (ips []string) {
 	all := GetSelfIp(ifnames...)
 	for _, v := range all {
-		ipA := strings.Split(v, ".")[0]
-		if ipA == "10" || ipA == "172" || ipA == "192" || v == "127.0.0.1" {
+		if IsIntraIp(v) {
 			continue
 		}
 		ips = append(ips, v)

@@ -86,7 +86,10 @@ var Config = struct {
 	UdpServerGoCnt   int
 	TimeSyncInterval uint
 	PoolSize         int32
-}{0, 64, 10, 50000}
+	SSLCrtPath       string
+	SSLKeyPath       string
+	EnableWss        bool
+}{UdpServerGoCnt: 64, TimeSyncInterval: 10, PoolSize: 50000}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {
