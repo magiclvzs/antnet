@@ -243,7 +243,7 @@ func (r *msgQue) SendCallback(m *Message, c chan *Message) (re bool) {
 	return true
 }
 
-func (r *msgQue) DelCallback(m *Message)  {
+func (r *msgQue) DelCallback(m *Message) {
 	if r.callback == nil {
 		return
 	}
@@ -475,11 +475,14 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser IParserFa
 			return err
 		}
 	}
-	if addrs[0] == "ws" {
+	if addrs[0] == "ws" || addrs[0] == "wss" {
 		naddr := strings.SplitN(addrs[1], "/", 2)
 		url := "/"
 		if len(naddr) > 1 {
 			url = "/" + naddr[1]
+		}
+		if addrs[0] == "wss" {
+			Config.EnableWss = true
 		}
 		LogInfo("ws type msgque noly support MsgTypeCmd now auto set to MsgTypeCmd")
 		msgque := newWsListen(naddr[0], url, MsgTypeCmd, handler, parser)

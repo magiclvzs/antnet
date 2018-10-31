@@ -177,8 +177,13 @@ func (r *wsMsgQue) listen() {
 		}
 	})
 
-	if Config.EnableWss && Config.SSLCrtPath != "" && Config.SSLKeyPath != "" {
-		r.listener.ListenAndServeTLS(Config.SSLCrtPath, Config.SSLKeyPath)
+	if Config.EnableWss {
+		if Config.SSLCrtPath != "" && Config.SSLKeyPath != "" {
+			r.listener.ListenAndServeTLS(Config.SSLCrtPath, Config.SSLKeyPath)
+		} else {
+			LogError("start wss failed ssl path not set please set now auto change to ws")
+			r.listener.ListenAndServe()
+		}
 	} else {
 		r.listener.ListenAndServe()
 	}
