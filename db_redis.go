@@ -166,6 +166,7 @@ func (r *RedisManager) Exist(id int) bool {
 func (r *RedisManager) Add(id int, conf *RedisConfig) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
+	LogInfo("new redis id:%v conf:%#v", id, conf)
 	if _, ok := r.dbs[id]; ok {
 		LogError("redis already have id:%v", id)
 		return
@@ -215,7 +216,6 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 		}
 	}
 	r.dbs[id] = re
-	LogInfo("connect to redis %v", conf.Addr)
 }
 
 func (r *RedisManager) close() {
@@ -242,7 +242,7 @@ func NewRedisScript(commit, str string) int {
 }
 
 func GetRedisScript(cmd int) string {
-	if s, ok := scriptMap[cmd]; ok{
+	if s, ok := scriptMap[cmd]; ok {
 		return s
 	}
 	return ""
