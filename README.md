@@ -39,10 +39,6 @@ antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。
 1.值写入和读取的先后顺序，相关代码都经过认真思考和测试，先后顺序并不影响逻辑。    
 2.值写入了一半，如果对32位的值在16位架构下面确实可能，但现在服务器基本都是64位架构的，亦不存在此问题。
 
-## 商业案例
-![image](https://github.com/magiclvzs/arts/blob/master/logo_02.png)
-![image](https://github.com/magiclvzs/arts/blob/master/logo_03.png)
-
 ## 测试框架
 https://github.com/magiclvzs/wsserver   
 wsserver是一个websocket的测试框架，用于展示如何使用antnet   
