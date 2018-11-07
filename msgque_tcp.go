@@ -57,6 +57,9 @@ func (r *tcpMsgQue) LocalAddr() string {
 }
 
 func (r *tcpMsgQue) RemoteAddr() string {
+	if r.realRemoteAddr != ""{
+		return  r.realRemoteAddr
+	}
 	if r.conn != nil {
 		return r.conn.RemoteAddr().String()
 	}

@@ -62,6 +62,9 @@ func (r *udpMsgQue) LocalAddr() string {
 }
 
 func (r *udpMsgQue) RemoteAddr() string {
+	if r.realRemoteAddr != "" {
+		return r.realRemoteAddr
+	}
 	if r.addr != nil {
 		return r.addr.String()
 	}

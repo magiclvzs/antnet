@@ -41,6 +41,7 @@ type IMsgQue interface {
 
 	LocalAddr() string
 	RemoteAddr() string
+	SetRealRemoteAddr(addr string)
 
 	Stop()
 	IsStop() bool
@@ -87,15 +88,16 @@ type msgQue struct {
 	timeout       int //传输超时
 	lastTick      int64
 
-	init         bool
-	available    bool
-	sendFast     bool
-	multiplex    bool
-	callback     map[int]chan *Message
-	group        map[string]int
-	user         interface{}
-	callbackLock sync.Mutex
-	gmsgId       uint16
+	init           bool
+	available      bool
+	sendFast       bool
+	multiplex      bool
+	callback       map[int]chan *Message
+	group          map[string]int
+	user           interface{}
+	callbackLock   sync.Mutex
+	gmsgId         uint16
+	realRemoteAddr string //当使用代理是，需要特殊设置客户端真实IP
 }
 
 func (r *msgQue) SetSendFast() {
@@ -164,6 +166,10 @@ func (r *msgQue) GetTimeout() int {
 
 func (r *msgQue) Reconnect(t int) {
 
+}
+
+func (r *msgQue) SetRealRemoteAddr(addr string) {
+	r.realRemoteAddr = addr
 }
 
 func (r *msgQue) SetGroupId(group string) {

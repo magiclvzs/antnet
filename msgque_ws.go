@@ -50,6 +50,9 @@ func (r *wsMsgQue) LocalAddr() string {
 }
 
 func (r *wsMsgQue) RemoteAddr() string {
+	if r.realRemoteAddr != "" {
+		return r.realRemoteAddr
+	}
 	if r.conn != nil {
 		return r.conn.RemoteAddr().String()
 	}
