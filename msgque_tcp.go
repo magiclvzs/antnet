@@ -17,6 +17,11 @@ type tcpMsgQue struct {
 	address    string
 	wait       sync.WaitGroup
 	connecting int32
+	rawBuffer  []byte
+}
+
+func (r *tcpMsgQue) SetCmdReadRaw() {
+	r.rawBuffer = make([]byte, Config.ReadDataBuffer)
 }
 
 func (r *tcpMsgQue) GetNetType() NetType {
@@ -57,8 +62,8 @@ func (r *tcpMsgQue) LocalAddr() string {
 }
 
 func (r *tcpMsgQue) RemoteAddr() string {
-	if r.realRemoteAddr != ""{
-		return  r.realRemoteAddr
+	if r.realRemoteAddr != "" {
+		return r.realRemoteAddr
 	}
 	if r.conn != nil {
 		return r.conn.RemoteAddr().String()
@@ -221,8 +226,19 @@ func (r *tcpMsgQue) writeMsg() {
 
 func (r *tcpMsgQue) readCmd() {
 	reader := bufio.NewReader(r.conn)
+	var err error
+	var len int
+	var data []byte
 	for !r.IsStop() {
-		data, err := reader.ReadBytes('\n')
+		if r.rawBuffer != nil {
+			len, err = reader.Read(r.rawBuffer)
+			if err == nil && len > 0 {
+				data = make([]byte, len)
+				copy(data, r.rawBuffer)
+			}
+		} else {
+			data, err = reader.ReadBytes('\n')
+		}
 		if err != nil {
 			break
 		}

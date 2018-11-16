@@ -56,6 +56,7 @@ type IMsgQue interface {
 	DelCallback(m *Message)
 	SetSendFast()
 	SetTimeout(t int)
+	SetCmdReadRaw()
 	GetTimeout() int
 	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
 
@@ -115,7 +116,9 @@ func (r *msgQue) getGMsg(add bool) *gMsg {
 	gm := gmsgArray[r.gmsgId]
 	return gm
 }
+func (r *msgQue) SetCmdReadRaw() {
 
+}
 func (r *msgQue) Available() bool {
 	return r.available
 }
@@ -490,7 +493,9 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser IParserFa
 		if addrs[0] == "wss" {
 			Config.EnableWss = true
 		}
-		LogInfo("ws type msgque noly support MsgTypeCmd now auto set to MsgTypeCmd")
+		if typ != MsgTypeCmd {
+			LogInfo("ws type msgque noly support MsgTypeCmd now auto set to MsgTypeCmd")
+		}
 		msgque := newWsListen(naddr[0], url, MsgTypeCmd, handler, parser)
 		Go(func() {
 			LogDebug("process listen for ws msgque:%d", msgque.id)
