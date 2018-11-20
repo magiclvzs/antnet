@@ -9,7 +9,7 @@ func (r *Error) Error() string {
 	return r.Str
 }
 
-var idErrMap = map[uint16]error{}
+var idErrMap = map[uint16]*Error{}
 var errIdMap = map[error]uint16{}
 
 func NewError(str string, id uint16) *Error {
@@ -51,7 +51,7 @@ var (
 
 var MinUserError = 256
 
-func GetError(id uint16) error {
+func GetError(id uint16) *Error {
 	if e, ok := idErrMap[id]; ok {
 		return e
 	}
