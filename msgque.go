@@ -46,6 +46,7 @@ type IMsgQue interface {
 	Stop()
 	IsStop() bool
 	Available() bool
+	IsProxy() bool
 
 	Send(m *Message) (re bool)
 	SendString(str string) (re bool)
@@ -169,6 +170,10 @@ func (r *msgQue) GetTimeout() int {
 
 func (r *msgQue) Reconnect(t int) {
 
+}
+
+func (r *msgQue) IsProxy() bool{
+	return r.realRemoteAddr != ""
 }
 
 func (r *msgQue) SetRealRemoteAddr(addr string) {
