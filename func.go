@@ -54,14 +54,14 @@ func Stop() {
 	close(stopChanForGo)
 	for sc := 0; !waitAll.TryWait(); sc++ {
 		Sleep(1)
-		if sc >= 3000 {
+		if sc >= Config.StopTimeout {
 			LogError("Server Stop Timeout")
 			stopCheckMap.Lock()
 			for _, v := range stopCheckMap.M {
 				LogError("Server Stop Timeout:%v", v)
 			}
 			stopCheckMap.Unlock()
-			sc = 0
+			break
 		}
 	}
 

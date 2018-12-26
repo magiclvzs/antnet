@@ -153,7 +153,23 @@ func GetHour(timestamp int64, timezone int) int {
 * @return uint32_t 返回不同的天数
  */
 func IsDiffDay(now, old int64, timezone int) int {
+	now += int64(timezone * 3600)
+	old += int64(timezone * 3600)
 	return int((now / 86400) - (old / 86400))
+}
+
+/**
+* @brief 判断时间戳是否处于两个小时之内
+*
+* @param now 需要比较的时间戳
+* @param hour_start 起始的小时 0 -23
+* @param hour_end 结束的小时 0 -23
+* @param timezone 时区
+* @return bool true表示处于两个小时之间
+*/
+func IsBetweenHour(now int64, hour_start, hour_end int, timezone int) bool {
+	hour := GetHour23(now, timezone)
+	return (hour >= hour_start) && (hour < hour_end)
 }
 
 /**

@@ -90,7 +90,8 @@ var Config = struct {
 	SSLKeyPath       string
 	EnableWss        bool
 	ReadDataBuffer   int
-}{UdpServerGoCnt: 64, TimeSyncInterval: 10, PoolSize: 50000, ReadDataBuffer: 1 << 12}
+	StopTimeout      int
+}{UdpServerGoCnt: 64, TimeSyncInterval: 10, PoolSize: 50000, ReadDataBuffer: 1 << 12, StopTimeout:3000}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {
