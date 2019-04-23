@@ -107,7 +107,7 @@ func HttpUpload(url, field, file string) (*http.Response, error) {
 	if err != nil {
 		LogError("post failed:%s\n", err)
 	}
-
+	resp.Body.Close()
 	return resp, err
 }
 
