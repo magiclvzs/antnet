@@ -21,6 +21,11 @@ func (r *RedisModel) PbData(v proto.Message) []byte {
 	return PbData(v)
 }
 
+func (r *RedisModel) PbStr(v proto.Message) string {
+	return PbStr(v)
+}
+
+
 func (r *RedisModel) ParseDBData(data []byte, v proto.Message) bool {
 	return ParseDBData(data, v)
 }
