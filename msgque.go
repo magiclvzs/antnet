@@ -70,8 +70,8 @@ type IMsgQue interface {
 	DelGroupId(group string)
 	ClearGroupId(group string)
 	IsInGroup(group string) bool
-
-	SetMultiplex(multiplex bool) bool
+	//服务器内部通讯时提升效率，比如战斗服发送消息到网关服，应该在连接建立时使用，cwriteCnt大于0表示重新设置cwrite缓存长度，内网一般发送较快，不用考虑
+	SetMultiplex(multiplex bool, cwriteCnt int) bool
 
 	tryCallback(msg *Message) (re bool)
 }
@@ -213,9 +213,12 @@ func (r *msgQue) IsInGroup(group string) bool {
 	return re
 }
 
-func (r *msgQue) SetMultiplex(multiplex bool) bool {
+func (r *msgQue) SetMultiplex(multiplex bool, cwriteCnt int) bool {
 	t := r.multiplex
 	r.multiplex = multiplex
+	if cwriteCnt > 0 {
+		r.cwrite = make(chan *Message, cwriteCnt)
+	}
 	return t
 }
 
@@ -511,8 +514,13 @@ func StartServer(addr string, typ MsgType, handler IMsgHandler, parser IParserFa
 	return nil
 }
 
-func StartConnect(netype string, addr string, typ MsgType, handler IMsgHandler, parser IParserFactory, user interface{}) IMsgQue {
-	msgque := newTcpConn(netype, addr, nil, typ, handler, parser, user)
+func StartConnect(netType string, addr string, typ MsgType, handler IMsgHandler, parser IParserFactory, user interface{}) IMsgQue {
+	var msgque IMsgQue
+	if netType == "ws" || netType == "wss" {
+		msgque = newWsConn(addr, nil, typ, handler, parser, user)
+	} else {
+		msgque = newTcpConn(netType, addr, nil, typ, handler, parser, user)
+	}
 	if handler.OnNewMsgQue(msgque) {
 		msgque.Reconnect(0)
 		return msgque

@@ -61,14 +61,12 @@ func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
 			tick = time.NewTimer(time.Millisecond * time.Duration(inteval))
 			select {
 			case <-cstop:
+				tick.Stop()
 				inteval = 0
 			case <-tick.C:
 				tick.Stop()
 				inteval = fn(args...)
 			}
-		}
-		if tick != nil {
-			tick.Stop()
 		}
 	})
 }
