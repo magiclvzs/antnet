@@ -1,5 +1,7 @@
 package antnet
 
+import "sync"
+
 type Error struct {
 	Id  uint16
 	Str string
@@ -9,13 +11,13 @@ func (r *Error) Error() string {
 	return r.Str
 }
 
-var idErrMap = map[uint16]*Error{}
-var errIdMap = map[error]uint16{}
+var idErrMap = sync.Map{}
+var errIdMap = sync.Map{}
 
 func NewError(str string, id uint16) *Error {
 	err := &Error{id, str}
-	idErrMap[id] = err
-	errIdMap[err] = id
+	idErrMap.Store(id, err)
+	errIdMap.Store(err, id)
 	return err
 }
 
@@ -52,17 +54,18 @@ var (
 var MinUserError = 256
 
 func GetError(id uint16) *Error {
-	if e, ok := idErrMap[id]; ok {
-		return e
+	if e, ok := idErrMap.Load(id); ok {
+		return e.(*Error)
 	}
 	return ErrErrIdNotFound
 }
 
 func GetErrId(err error) uint16 {
-	if id, ok := errIdMap[err]; ok {
-		return id
+	if id, ok := errIdMap.Load(err); ok {
+		return id.(uint16)
 	}
-	return errIdMap[ErrErrIdNotFound]
+	id, _ := errIdMap.Load(ErrErrIdNotFound)
+	return id.(uint16)
 }
 
 type ErrJsonStr struct {

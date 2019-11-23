@@ -84,29 +84,33 @@ func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64,
 }
 
 func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}, error) {
-	hash, _ := scriptHashMap[cmd]
-	re, err := r.EvalSha(hash, keys, args...).Result()
+	var err error = ErrDBErr
+	var re interface{}
+	hashStr, ok := scriptHashMap.Load(cmd)
+	if ok {
+		re, err = r.EvalSha(hashStr.(string), keys, args...).Result()
+	}
 	if err != nil {
-		script, ok := scriptMap[cmd]
+		scriptStr, ok := scriptMap.Load(cmd)
 		if !ok {
 			LogError("redis script error cmd not found cmd:%v", cmd)
 			return nil, ErrDBErr
 		}
-
-		if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-			LogInfo("try reload redis script %v", scriptCommitMap[cmd])
-			hash, err = r.ScriptLoad(script).Result()
+		cmdStr, _ := scriptCommitMap.Load(cmd)
+		if strings.HasPrefix(err.Error(), "NOSCRIPT ") || err == ErrDBErr {
+			LogInfo("try reload redis script %v", cmdStr.(string))
+			hashStr, err = r.ScriptLoad(scriptStr.(string)).Result()
 			if err != nil {
-				LogError("redis script load cmd:%v errstr:%s", scriptCommitMap[cmd], err)
+				LogError("redis script load cmd:%v errstr:%s", cmdStr.(string), err)
 				return nil, ErrDBErr
 			}
-			scriptHashMap[cmd] = hash
-			re, err = r.EvalSha(hash, keys, args...).Result()
+			scriptHashMap.Store(cmd, hashStr.(string))
+			re, err = r.EvalSha(hashStr.(string), keys, args...).Result()
 			if err == nil {
 				return re, nil
 			}
 		}
-		LogError("redis script error cmd:%v errstr:%s", scriptCommitMap[cmd], err)
+		LogError("redis script error cmd:%v errstr:%s", cmdStr.(string), err)
 		return nil, ErrDBErr
 	}
 
@@ -228,22 +232,22 @@ func (r *RedisManager) close() {
 }
 
 var (
-	scriptMap             = map[int]string{}
-	scriptCommitMap       = map[int]string{}
-	scriptHashMap         = map[int]string{}
+	scriptMap             = sync.Map{} //map[int]string{}
+	scriptCommitMap       = sync.Map{} //map[int]string{}
+	scriptHashMap         = sync.Map{} //map[int]string{}
 	scriptIndex     int32 = 0
 )
 
 func NewRedisScript(commit, str string) int {
 	cmd := int(atomic.AddInt32(&scriptIndex, 1))
-	scriptMap[cmd] = str
-	scriptCommitMap[cmd] = commit
+	scriptMap.Store(cmd, str)
+	scriptCommitMap.Store(cmd, commit)
 	return cmd
 }
 
 func GetRedisScript(cmd int) string {
-	if s, ok := scriptMap[cmd]; ok {
-		return s
+	if s, ok := scriptMap.Load(cmd); ok {
+		return s.(string)
 	}
 	return ""
 }
