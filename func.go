@@ -250,6 +250,21 @@ func Try(fun func(), handler func(interface{})) {
 	fun()
 }
 
+func Try2(fun func(), handler func(interface{})) {
+	defer func() {
+		if err := recover(); err != nil {
+			LogStack()
+			LogError("error catch:%v", err)
+			if handler != nil {
+				handler(err)
+			}
+			atomic.AddInt32(&statis.PanicCount, 1)
+			statis.LastPanic = int(Timestamp)
+		}
+	}()
+	fun()
+}
+
 func ParseBaseKind(kind reflect.Kind, data string) (interface{}, error) {
 	switch kind {
 	case reflect.String:

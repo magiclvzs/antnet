@@ -2,6 +2,7 @@ package antnet
 
 import (
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -14,6 +15,8 @@ type wsMsgQue struct {
 	upgrader *websocket.Upgrader
 	addr     string
 	url      string
+	wait       sync.WaitGroup
+	connecting int32
 	listener *http.Server
 }
 
@@ -63,6 +66,7 @@ func (r *wsMsgQue) readCmd() {
 	for !r.IsStop() {
 		_, data, err := r.conn.ReadMessage()
 		if err != nil {
+			LogError("msgque:%v recv data err:%v", r.id, err)
 			break
 		}
 		if !r.processMsg(r, &Message{Data: data}) {
@@ -190,6 +194,103 @@ func (r *wsMsgQue) listen() {
 	} else {
 		r.listener.ListenAndServe()
 	}
+}
+func (r *wsMsgQue) connect() {
+	LogInfo("connect to addr:%s msgque:%d",r.addr, r.id)
+	c, _, err := websocket.DefaultDialer.Dial(r.addr, nil)
+	if err != nil {
+		LogInfo("connect to addr:%s failed msgque:%d err:%v ", r.addr, r.id, err)
+		r.handler.OnConnectComplete(r, false)
+		atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
+		r.Stop()
+	} else {
+		r.conn = c
+		r.available = true
+		LogInfo("connect to addr:%s ok msgque:%d", r.addr, r.id)
+		if r.handler.OnConnectComplete(r, true) {
+			atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
+			Go(func() {
+				LogInfo("process read for msgque:%d", r.id)
+				r.read()
+				LogInfo("process read end for msgque:%d", r.id)
+			})
+			Go(func() {
+				LogInfo("process write for msgque:%d", r.id)
+				r.write()
+				LogInfo("process write end for msgque:%d", r.id)
+			})
+		} else {
+			atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
+			r.Stop()
+		}
+	}
+}
+
+
+func (r *wsMsgQue) Reconnect(t int) {
+	if IsStop() {
+		return
+	}
+	if r.conn != nil {
+		if r.stop == 0 {
+			return
+		}
+	}
+
+	if !atomic.CompareAndSwapInt32(&r.connecting, 0, 1) {
+		return
+	}
+
+	if r.init {
+		if t < 1 {
+			t = 1
+		}
+	}
+	r.init = true
+	Go(func() {
+		if len(r.cwrite) == 0 {
+			r.cwrite <- nil
+		}
+		r.wait.Wait()
+		if t > 0 {
+			SetTimeout(t*1000, func(arg ...interface{}) int {
+				r.stop = 0
+				r.connect()
+				return 0
+			})
+		} else {
+			r.stop = 0
+			r.connect()
+		}
+
+	})
+}
+
+func newWsConn(addr string, conn *websocket.Conn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory, user interface{}) *wsMsgQue {
+	msgque := wsMsgQue{
+		msgQue: msgQue{
+			id:            atomic.AddUint32(&msgqueId, 1),
+			cwrite:        make(chan *Message, 64),
+			msgTyp:        msgtyp,
+			handler:       handler,
+			timeout:       DefMsgQueTimeout,
+			connTyp:       ConnTypeConn,
+			gmsgId:        gmsgId,
+			parserFactory: parser,
+			lastTick:      Timestamp,
+			user:          user,
+		},
+		conn:    conn,
+		addr: addr,
+	}
+	if parser != nil {
+		msgque.parser = parser.Get()
+	}
+	msgqueMapSync.Lock()
+	msgqueMap[msgque.id] = &msgque
+	msgqueMapSync.Unlock()
+	LogInfo("new msgque id:%d connect to addr:%s", msgque.id, addr)
+	return &msgque
 }
 
 func newWsAccept(conn *websocket.Conn, msgtyp MsgType, handler IMsgHandler, parser IParserFactory) *wsMsgQue {

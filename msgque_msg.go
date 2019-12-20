@@ -210,13 +210,13 @@ func (r *Message) CopyTag(old *Message) *Message {
 }
 
 func NewErrMsg(err error) *Message {
-	errcode, ok := errIdMap[err]
+	errcode, ok := errIdMap.Load(err)
 	if !ok {
-		errcode = errIdMap[ErrErrIdNotFound]
+		errcode, _ = errIdMap.Load(ErrErrIdNotFound)
 	}
 	return &Message{
 		Head: &MessageHead{
-			Error: errcode,
+			Error: errcode.(uint16),
 		},
 	}
 }

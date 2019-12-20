@@ -379,7 +379,7 @@ func (r *tcpMsgQue) connect() {
 	LogInfo("connect to addr:%s msgque:%d", r.address, r.id)
 	c, err := net.DialTimeout(r.network, r.address, time.Second)
 	if err != nil {
-		LogInfo("connect to addr:%s failed msgque:%d", r.address, r.id)
+		LogInfo("connect to addr:%s failed msgque:%d err:%v", r.address, r.id, err)
 		r.handler.OnConnectComplete(r, false)
 		atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
 		r.Stop()
