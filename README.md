@@ -37,7 +37,7 @@ antnet在很多方面和市面上常见的框架都很不一样，因为antnet�
 ## 依赖项
 github.com/golang/protobuf   
 github.com/vmihailenco/msgpack   
-github.com/go-redis/redis    v6版本
+github.com/go-redis/redis    v6版本   
 github.com/gorilla/websocket
 
 ## 生产环境
