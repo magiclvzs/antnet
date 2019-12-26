@@ -41,7 +41,7 @@ github.com/go-redis/redis    v6版本
 github.com/gorilla/websocket
 
 ## 生产环境
-antnet已经用于商业游戏的生产环境（实时竞技类型游戏）。  
+antnet已服务全球数千万玩家，部分商业游戏案例：   
 《街篮2》https://www.taptap.com/app/175459   
 《灌篮高手》https://www.taptap.com/app/154129   
 当然antnet作为最基础的框架并没有实现RUDP，因为游戏类型不同，我更倾向于为每个游戏定制RUDP，所以RUDP在更高一层的战斗服里面。  
