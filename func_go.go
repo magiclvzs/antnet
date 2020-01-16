@@ -45,23 +45,9 @@ func Go(fn func()) {
 }
 
 func Go2(fn func(cstop chan struct{})) {
-	waitAll.Add(1)
-	var debugStr string
-	id := atomic.AddUint32(&goid, 1)
-	c := atomic.AddInt32(&gocount, 1)
-	if DefLog.Level() <= LogLevelDebug {
-		debugStr = LogSimpleStack()
-		LogDebug("goroutine start id:%d count:%d from:%s", id, c, debugStr)
-	}
-
-	go func() {
+	Go(func() {
 		Try(func() { fn(stopChanForGo) }, nil)
-		waitAll.Done()
-		c = atomic.AddInt32(&gocount, -1)
-		if DefLog.Level() <= LogLevelDebug {
-			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
-		}
-	}()
+	})
 }
 
 func GoArgs(fn func(...interface{}), args ...interface{}) {
