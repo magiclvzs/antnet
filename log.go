@@ -196,6 +196,16 @@ func (r *Log) start() {
 				r.logger[i].Write(s)
 			}
 		}
+
+		// 关闭打开的文件fd
+		for i = 0; i < r.loggerCount; i++ {
+			if f, ok := r.logger[i].(*FileLogger); ok {
+				if f.file != nil {
+					f.file.Close()
+					f.file = nil
+				}
+			}
+		}
 	})
 }
 
