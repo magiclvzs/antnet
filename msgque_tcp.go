@@ -376,17 +376,17 @@ func (r *tcpMsgQue) listen() {
 }
 
 func (r *tcpMsgQue) connect() {
-	LogInfo("connect to addr:%s msgque:%d", r.address, r.id)
+	LogDebug("connect to addr:%s msgque:%d", r.address, r.id)
 	c, err := net.DialTimeout(r.network, r.address, time.Second)
 	if err != nil {
-		LogInfo("connect to addr:%s failed msgque:%d err:%v", r.address, r.id, err)
+		LogDebug("connect to addr:%s failed msgque:%d err:%v", r.address, r.id, err)
 		r.handler.OnConnectComplete(r, false)
 		atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
 		r.Stop()
 	} else {
 		r.conn = c
 		r.available = true
-		LogInfo("connect to addr:%s ok msgque:%d", r.address, r.id)
+		LogDebug("connect to addr:%s ok msgque:%d", r.address, r.id)
 		if r.handler.OnConnectComplete(r, true) {
 			atomic.CompareAndSwapInt32(&r.connecting, 1, 0)
 			Go(func() {
@@ -469,7 +469,7 @@ func newTcpConn(network, addr string, conn net.Conn, msgtyp MsgType, handler IMs
 	msgqueMapSync.Lock()
 	msgqueMap[msgque.id] = &msgque
 	msgqueMapSync.Unlock()
-	LogInfo("new msgque id:%d connect to addr:%s:%s", msgque.id, network, addr)
+	LogDebug("new msgque id:%d connect to addr:%s:%s", msgque.id, network, addr)
 	return &msgque
 }
 
