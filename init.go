@@ -84,14 +84,13 @@ var Timestamp int64
 var Config = struct {
 	AutoCompressLen  uint32
 	UdpServerGoCnt   int
-	TimeSyncInterval uint
 	PoolSize         int32
 	SSLCrtPath       string
 	SSLKeyPath       string
 	EnableWss        bool
 	ReadDataBuffer   int
 	StopTimeout      int
-}{UdpServerGoCnt: 64, TimeSyncInterval: 10, PoolSize: 50000, ReadDataBuffer: 1 << 12, StopTimeout:3000}
+}{UdpServerGoCnt: 64, PoolSize: 50000, ReadDataBuffer: 1 << 12, StopTimeout:3000}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {

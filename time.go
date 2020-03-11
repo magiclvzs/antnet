@@ -75,17 +75,15 @@ func timerTick() {
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
-	var count uint
+	var ticker = time.NewTicker(time.Microsecond)
 	Go(func() {
 		for IsRuning() {
-			Sleep(1)
-			count++
-			if Config.TimeSyncInterval > 0 && count%Config.TimeSyncInterval != 0 {
-				NowTick++
-				continue
+			select {
+				case <- ticker.C:
+					NowTick = time.Now().UnixNano() / 1000000
+					Timestamp = NowTick / 1000
 			}
-			NowTick = time.Now().UnixNano() / 1000000
-			Timestamp = NowTick / 1000
+			ticker.Stop()
 		}
 	})
 }
