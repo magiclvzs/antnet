@@ -28,7 +28,7 @@ func NewArrayMap(cap int, threadSafe bool) *arrayMap {
 
 func (r *arrayMap) addSafe(value interface{}) int32 {
 	var id int32 = -1
-	for r.delIndex > 0 {
+	for r.delIndex > 0 && id == -1 {
 		ov := r.delIndex
 		nv := r.delIndex - 1
 		if nv >= 0 {
@@ -84,7 +84,7 @@ func (r *arrayMap) Get(index int32) interface{} {
 
 func (r *arrayMap) add(value interface{}) int32 {
 	var id int32 = -1
-	for r.delIndex > 0 {
+	if r.delIndex > 0 {
 		id = r.delArray[r.delIndex]
 		r.delIndex--
 	}
