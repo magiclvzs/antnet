@@ -210,3 +210,24 @@ func IsDiffWeek(now, old int64, hour, timezone int) bool {
 	_, ow := time.Unix(old, 0).UTC().ISOWeek()
 	return nw != ow && diffHour
 }
+
+/* 今天零点
+ * timezone 时区
+ * return 零点时间
+ */
+func ZeroTime(timezone int) int64 {
+	timeStr := time.Now().Format("2006-01-02")
+	t, _ := time.Parse("2006-01-02", timeStr)
+	return t.Unix() - int64(timezone*3600)
+}
+
+/* 年月日
+ * timestamp 时间
+ * timezone 时区
+ * return year,month,day
+ */
+func YearMonthDay(timestamp int64, timezone int) (int32,int32,int32 ){
+	timestamp += int64(timezone * 3600)
+	year,month,day := time.Unix(timestamp, 0).UTC().Date()
+	return int32(year),int32(month),int32(day)
+}
