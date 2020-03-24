@@ -79,12 +79,12 @@ func timerTick() {
 	Go(func() {
 		for IsRuning() {
 			select {
-				case <- ticker.C:
-					NowTick = time.Now().UnixNano() / 1000000
-					Timestamp = NowTick / 1000
+			case <-ticker.C:
+				NowTick = time.Now().UnixNano() / 1000000
+				Timestamp = NowTick / 1000
 			}
-			ticker.Stop()
 		}
+		ticker.Stop()
 	})
 }
 
@@ -162,7 +162,7 @@ func IsDiffDay(now, old int64, timezone int) int {
 * @param hour_end 结束的小时 0 -23
 * @param timezone 时区
 * @return bool true表示处于两个小时之间
-*/
+ */
 func IsBetweenHour(now int64, hour_start, hour_end int, timezone int) bool {
 	hour := GetHour23(now, timezone)
 	return (hour >= hour_start) && (hour < hour_end)
@@ -226,8 +226,8 @@ func ZeroTime(timezone int) int64 {
  * timezone 时区
  * return year,month,day
  */
-func YearMonthDay(timestamp int64, timezone int) (int32,int32,int32 ){
+func YearMonthDay(timestamp int64, timezone int) (int32, int32, int32) {
 	timestamp += int64(timezone * 3600)
-	year,month,day := time.Unix(timestamp, 0).UTC().Date()
-	return int32(year),int32(month),int32(day)
+	year, month, day := time.Unix(timestamp, 0).UTC().Date()
+	return int32(year), int32(month), int32(day)
 }
