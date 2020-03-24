@@ -2,12 +2,14 @@ package antnet
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 type ILogger interface {
@@ -87,6 +89,40 @@ func (r *FileLogger) Write(str string) {
 		r.file.WriteString(str)
 		r.size += len(str)
 	}
+}
+
+type HttpLogger struct {
+	Url     string
+	Get    bool
+	GetKey  string
+	Timeout int
+}
+
+func (r *HttpLogger) Write(str string) {
+	if r.Url == "" {
+		return
+	}
+	Go(func() {
+		if r.Timeout == 0 {
+			r.Timeout = 5
+		}
+		c := http.Client{
+			Timeout: time.Duration(r.Timeout) * time.Second,
+		}
+		var resp *http.Response
+		if r.Get {
+			if r.GetKey == "" {
+				r.GetKey = "log"
+			}
+			resp, _ = c.Get(r.Url + "/?" + r.GetKey + "=" + str)
+		} else {
+			resp, _ = c.Post(r.Url, "application/x-www-form-urlencoded", strings.NewReader(str))
+		}
+		
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+	})
 }
 
 type LogLevel int
