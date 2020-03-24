@@ -75,7 +75,7 @@ func timerTick() {
 	StartTick = time.Now().UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
-	var ticker = time.NewTicker(time.Microsecond)
+	var ticker = time.NewTicker(time.Millisecond)
 	Go(func() {
 		for IsRuning() {
 			select {

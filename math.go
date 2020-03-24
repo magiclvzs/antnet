@@ -82,3 +82,21 @@ func Abs(x float64) float64 {
 func MaxInt32() int32 {
 	return math.MaxInt32
 }
+
+// 两个数的较大值
+func Max(x, y int32) int32 {
+	if x > y {
+		return x
+	}
+
+	return y
+}
+
+// 两个数的较小值
+func Min(x, y int32) int32 {
+	if x > y {
+		return y
+	}
+
+	return x
+}
