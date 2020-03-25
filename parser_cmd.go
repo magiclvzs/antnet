@@ -1,8 +1,6 @@
 package antnet
 
 import (
-	"bytes"
-	"encoding/json"
 	"reflect"
 	"strings"
 )
@@ -42,13 +40,6 @@ func (r *CmdParser) ParseC2S(msg *Message) (IMsgParser, error) {
 
 func (r *CmdParser) PackMsg(v interface{}) []byte {
 	data, _ := JsonPack(v)
-	if data != nil {
-		var out bytes.Buffer
-		err := json.Indent(&out, data, "", "\t")
-		if err == nil {
-			return out.Bytes()
-		}
-	}
 	return data
 }
 

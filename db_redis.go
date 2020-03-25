@@ -33,7 +33,9 @@ func (r *Redis) ScriptStr(cmd int, keys []string, args ...interface{}) (string, 
 	if ok {
 		return "", GetError(uint16(errcode))
 	}
-
+	if data == nil{
+		return "",nil
+	}
 	str, ok := data.(string)
 	if !ok {
 		return "", ErrDBDataType
@@ -60,7 +62,9 @@ func (r *Redis) ScriptStrArray(cmd int, keys []string, args ...interface{}) ([]s
 
 	strArray := []string{}
 	for _, v := range iArray {
-		if str, ok := v.(string); ok {
+		if v == nil{
+			strArray = append(strArray, "")
+		} else if str, ok := v.(string); ok {
 			strArray = append(strArray, str)
 		} else {
 			return nil, ErrDBDataType
@@ -75,6 +79,9 @@ func (r *Redis) ScriptInt64(cmd int, keys []string, args ...interface{}) (int64,
 	if err != nil {
 		LogError("redis script failed err:%v", err)
 		return 0, ErrDBErr
+	}
+	if data == nil{
+		return 0,nil
 	}
 	code, ok := data.(int64)
 	if ok {
@@ -147,13 +154,17 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 		}
 		pubsub := v.Subscribe(channels...)
 		v.pubsub = pubsub
+		LogInfo("[redis]config:%v, subscribe channel:%v",v.conf,channels)
 		goForRedis(func() {
 			for IsRuning() {
 				msg, err := pubsub.ReceiveMessage()
 				if err == nil {
 					Go(func() { fun(msg.Channel, msg.Payload) })
 				} else if _, ok := err.(net.Error); !ok {
-					break
+					if err.Error() != "redis: reply is empty"{
+						LogFatal("[redis]pubsub broken err:%v",err)
+						break
+					}
 				}
 			}
 		})
@@ -202,18 +213,22 @@ func (r *RedisManager) Add(id int, conf *RedisConfig) {
 		}
 	})
 
-	if _, ok := r.subMap[conf.Addr]; !ok {
+	if v, ok := r.subMap[conf.Addr]; !ok {
 		r.subMap[conf.Addr] = re
 		if len(r.channels) > 0 {
 			pubsub := re.Subscribe(r.channels...)
 			re.pubsub = pubsub
+			LogInfo("[redis]config:%v, subscribe channel:%v",v.conf,r.channels)
 			goForRedis(func() {
 				for IsRuning() {
 					msg, err := pubsub.ReceiveMessage()
 					if err == nil {
 						Go(func() { r.fun(msg.Channel, msg.Payload) })
 					} else if _, ok := err.(net.Error); !ok {
-						break
+						if err.Error() != "redis: reply is empty"{
+							LogFatal("[redis]pubsub broken err:%v",err)
+							break
+						}
 					}
 				}
 			})
