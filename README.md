@@ -51,8 +51,8 @@ antnet已服务全球数千万玩家，部分商业游戏案例：
 2.值写入了一半，如果对32位的值在16位架构下面确实可能，但现在服务器基本都是64位架构的，亦不存在此问题。
 
 ## 微信小程序
-antnet也支持H5研发，且为全行业唯一手游级H5产品。
-微信搜索《美食大战老鼠2》《街机三国3》或者微信扫码，即可体验
+antnet也支持H5研发，且为全行业唯一手游级H5产品。   
+微信搜索《美食大战老鼠2》《街机三国3》或者微信扫码，即可体验   
 ![](https://gitee.com/magiclvzs/pic/raw/master/jjsg.jpg)
 ![](https://gitee.com/magiclvzs/pic/raw/master/ms.jpg)
 
