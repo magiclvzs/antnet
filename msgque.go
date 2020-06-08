@@ -223,7 +223,7 @@ func (r *msgQue) SetMultiplex(multiplex bool, cwriteCnt int) bool {
 }
 
 func (r *msgQue) Send(m *Message) (re bool) {
-	if m == nil {
+	if m == nil || r.stop == 1 {
 		return
 	}
 	defer func() {

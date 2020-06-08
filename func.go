@@ -160,7 +160,7 @@ func Daemon(skip ...string) {
 				newCmd = append(newCmd, v)
 			}
 		}
-		Println("go deam args:", newCmd)
+		Println("go daemon args:", newCmd)
 		cmd := exec.Command(filePath)
 		cmd.Args = newCmd
 		cmd.Start()

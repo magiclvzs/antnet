@@ -97,7 +97,7 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 	if ok {
 		re, err = r.EvalSha(hashStr.(string), keys, args...).Result()
 	}
-	if err != nil {
+	if RedisError(err) {
 		scriptStr, ok := scriptMap.Load(cmd)
 		if !ok {
 			LogError("redis script error cmd not found cmd:%v", cmd)
@@ -113,7 +113,7 @@ func (r *Redis) Script(cmd int, keys []string, args ...interface{}) (interface{}
 			}
 			scriptHashMap.Store(cmd, hashStr.(string))
 			re, err = r.EvalSha(hashStr.(string), keys, args...).Result()
-			if err == nil {
+			if !RedisError(err) {
 				return re, nil
 			}
 		}
