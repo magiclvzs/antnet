@@ -36,6 +36,7 @@ func (r *ArrayMap) add(value interface{}) int32 {
 	}
 	if id == -1 {
 		id = r.genIndex + 1
+		r.genIndex++
 		if id >= int32(len(r.genArray)) {
 			newArray := make([]interface{}, r.rawCap)
 			r.genArray = append(r.genArray, newArray...)
@@ -43,7 +44,6 @@ func (r *ArrayMap) add(value interface{}) int32 {
 			r.delArray = append(r.delArray, newDelArray...)
 		}
 	}
-	r.genIndex++
 	r.genArray[id] = value
 	return id
 }
