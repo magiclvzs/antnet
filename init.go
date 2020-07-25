@@ -79,18 +79,19 @@ var poolGoCount int32
 
 var StartTick int64
 var NowTick int64
-var Timestamp int64
+var Timestamp int64   // 当前秒数
+var TimeString string // 当前时间 格式：2020-7-9 14:59:15
 
 var Config = struct {
-	AutoCompressLen  uint32
-	UdpServerGoCnt   int
-	PoolSize         int32
-	SSLCrtPath       string
-	SSLKeyPath       string
-	EnableWss        bool
-	ReadDataBuffer   int
-	StopTimeout      int
-}{UdpServerGoCnt: 64, PoolSize: 50000, ReadDataBuffer: 1 << 12, StopTimeout:3000}
+	AutoCompressLen uint32
+	UdpServerGoCnt  int
+	PoolSize        int32
+	SSLCrtPath      string
+	SSLKeyPath      string
+	EnableWss       bool
+	ReadDataBuffer  int
+	StopTimeout     int
+}{UdpServerGoCnt: 64, PoolSize: 50000, ReadDataBuffer: 1 << 12, StopTimeout: 3000}
 
 var stopCheckIndex uint64
 var stopCheckMap = struct {

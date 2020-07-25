@@ -72,16 +72,23 @@ func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
 }
 
 func timerTick() {
-	StartTick = time.Now().UnixNano() / 1000000
+	now := time.Now()
+	StartTick = now.UnixNano() / 1000000
 	NowTick = StartTick
 	Timestamp = NowTick / 1000
+	TimeString = now.Format("2006-01-02 15:04:05")
+	lastTimestamp := Timestamp
 	var ticker = time.NewTicker(time.Millisecond)
 	Go(func() {
 		for IsRuning() {
 			select {
 			case <-ticker.C:
-				NowTick = time.Now().UnixNano() / 1000000
+				now := time.Now()
+				NowTick = now.UnixNano() / 1000000
 				Timestamp = NowTick / 1000
+				if Timestamp != lastTimestamp {
+					TimeString = now.Format("2006-01-02 15:04:05")
+				}
 			}
 		}
 		ticker.Stop()
