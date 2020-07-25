@@ -114,7 +114,7 @@ func GetNextHourIntervalMS() int {
 * @return uint32_t 小时 范围 1-24
  */
 func GetHour24(timestamp int64, timezone int) int {
-	hour := (int((timestamp%86400)/3600) + timezone)
+	hour := int((timestamp%86400)/3600) + timezone
 	if hour > 24 {
 		return hour - 24
 	}

@@ -44,11 +44,11 @@ func HttpGetWithBasicAuth(url, name, passwd string) (string, error, *http.Respon
 	if err != nil {
 		return "", ErrHttpRequest, nil
 	}
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", ErrHttpRequest, nil
 	}
-	resp.Body.Close()
 	return string(body), nil, resp
 }
 
@@ -57,12 +57,11 @@ func HttpGet(url string) (string, error, *http.Response) {
 	if err != nil {
 		return "", ErrHttpRequest, nil
 	}
-
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", ErrHttpRequest, resp
 	}
-	resp.Body.Close()
 	return string(body), nil, resp
 }
 
@@ -71,13 +70,25 @@ func HttpPost(url, form string) (string, error, *http.Response) {
 	if err != nil {
 		return "", ErrHttpRequest, nil
 	}
-
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", ErrHttpRequest, resp
 	}
-	resp.Body.Close()
 	return string(body), nil, resp
+}
+
+func HttpPostJson(url string, body string) (string, error, *http.Response) {
+	res, err := http.Post(url, "application/json", strings.NewReader(body))
+	if err != nil {
+		return "", ErrHttpRequest, nil
+	}
+	defer res.Body.Close()
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", ErrHttpRequest, res
+	}
+	return string(resBody), nil, res
 }
 
 func HttpUpload(url, field, file string) (*http.Response, error) {
