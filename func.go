@@ -559,3 +559,11 @@ func SafeSubInt64(a, b int64) int64 {
 	}
 	return 0
 }
+
+//三元运算符
+func Ternary(val1 bool,ret1,ret2 interface{})interface{}{
+	if val1 {
+		return ret1
+	}
+	return ret2
+}
