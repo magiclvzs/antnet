@@ -87,6 +87,7 @@ func timerTick() {
 				NowTick = now.UnixNano() / 1000000
 				Timestamp = NowTick / 1000
 				if Timestamp != lastTimestamp {
+					lastTimestamp = Timestamp
 					TimeString = now.Format("2006-01-02 15:04:05")
 				}
 			}
