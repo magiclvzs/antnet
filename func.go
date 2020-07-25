@@ -505,9 +505,7 @@ type GBValueWeightPair struct {
 }
 
 func NewValueWeightPair() *GBValueWeightPair {
-	vwp := new(GBValueWeightPair)
-	vwp.valuelist = make([]*valueWeightItem, 0, 0)
-	return vwp
+	return &GBValueWeightPair{}
 }
 
 func (this *GBValueWeightPair) Add(weight uint32, value uint64) {
@@ -520,6 +518,9 @@ func (this *GBValueWeightPair) Add(weight uint32, value uint64) {
 }
 
 func (this *GBValueWeightPair) Random() uint64 {
+	if 1 == len(this.valuelist) {
+		return this.valuelist[0].value
+	}
 	if this.allweight > 0 {
 		randvalue := uint32(rand.Intn(int(this.allweight))) + 1 //[1,allweight]
 		addweight := uint32(0)
