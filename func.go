@@ -533,7 +533,9 @@ func (this *GBValueWeightPair) Random() uint64 {
 	}
 	return 0
 }
-
+func (this *GBValueWeightPair) GetValueList() []*valueWeightItem {
+	return this.valuelist
+}
 func SafeSubInt32(a, b int32) int32 {
 	if a > b {
 		return a - b
@@ -562,7 +564,7 @@ func SafeSubInt64(a, b int64) int64 {
 }
 
 //三元运算符
-func Ternary(val1 bool,ret1,ret2 interface{})interface{}{
+func Ternary(val1 bool, ret1, ret2 interface{}) interface{} {
 	if val1 {
 		return ret1
 	}
