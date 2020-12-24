@@ -55,7 +55,6 @@ type IMsgQue interface {
 	SendByteStrLn(str []byte) (re bool)
 	SendCallback(m *Message, c chan *Message) (re bool)
 	DelCallback(m *Message)
-	SetSendFast()
 	SetTimeout(t int)
 	SetCmdReadRaw()
 	GetTimeout() int
@@ -92,7 +91,6 @@ type msgQue struct {
 
 	init           bool
 	available      bool
-	sendFast       bool
 	multiplex      bool
 	callback       map[int]chan *Message
 	group          map[string]int
@@ -100,10 +98,6 @@ type msgQue struct {
 	callbackLock   sync.Mutex
 	gmsgId         uint16
 	realRemoteAddr string //当使用代理是，需要特殊设置客户端真实IP
-}
-
-func (r *msgQue) SetSendFast() {
-	r.sendFast = true
 }
 
 func (r *msgQue) SetUser(user interface{}) {

@@ -117,7 +117,7 @@ func (r *tcpMsgQue) readMsg() {
 	}
 }
 
-func (r *tcpMsgQue) writeMsgFast() {
+func (r *tcpMsgQue) writeMsg() {
 	var m *Message
 	var data []byte
 	gm := r.getGMsg(false)
@@ -158,64 +158,6 @@ func (r *tcpMsgQue) writeMsgFast() {
 		}
 
 		if writeCount == len(data) {
-			writeCount = 0
-			m = nil
-		}
-		r.lastTick = Timestamp
-	}
-	tick.Stop()
-}
-
-func (r *tcpMsgQue) writeMsg() {
-	var m *Message
-	head := make([]byte, MsgHeadSize)
-	gm := r.getGMsg(false)
-	writeCount := 0
-	tick := time.NewTimer(time.Second * time.Duration(r.timeout))
-	for !r.IsStop() || m != nil {
-		if m == nil {
-			select {
-			case <-stopChanForGo:
-			case m = <-r.cwrite:
-				if m != nil {
-					m.Head.FastBytes(head)
-				}
-			case <-gm.c:
-				if gm.fun == nil || gm.fun(r) {
-					m = gm.msg
-					m.Head.FastBytes(head)
-				}
-				gm = r.getGMsg(true)
-			case <-tick.C:
-				if r.isTimeout(tick) {
-					r.Stop()
-				}
-			}
-		}
-
-		if m == nil {
-			continue
-		}
-
-		if writeCount < MsgHeadSize {
-			n, err := r.conn.Write(head[writeCount:])
-			if err != nil {
-				LogError("msgque write id:%v err:%v", r.id, err)
-				break
-			}
-			writeCount += n
-		}
-
-		if writeCount >= MsgHeadSize && m.Data != nil {
-			n, err := r.conn.Write(m.Data[writeCount-MsgHeadSize : int(m.Head.Len)])
-			if err != nil {
-				LogError("msgque write id:%v err:%v", r.id, err)
-				break
-			}
-			writeCount += n
-		}
-
-		if writeCount == int(m.Head.Len)+MsgHeadSize {
 			writeCount = 0
 			m = nil
 		}
@@ -324,11 +266,7 @@ func (r *tcpMsgQue) write() {
 	if r.msgTyp == MsgTypeCmd {
 		r.writeCmd()
 	} else {
-		if r.sendFast {
-			r.writeMsgFast()
-		} else {
-			r.writeMsg()
-		}
+		r.writeMsg()
 	}
 }
 
