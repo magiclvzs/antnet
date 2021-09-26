@@ -93,7 +93,7 @@ func (r *FileLogger) Write(str string) {
 
 type HttpLogger struct {
 	Url     string
-	Get    bool
+	Get     bool
 	GetKey  string
 	Timeout int
 }
@@ -118,7 +118,7 @@ func (r *HttpLogger) Write(str string) {
 		} else {
 			resp, _ = c.Post(r.Url, "application/x-www-form-urlencoded", strings.NewReader(str))
 		}
-		
+
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
 		}
@@ -154,6 +154,7 @@ type Log struct {
 	preLoggerCount int32
 	loggerCount    int32
 	level          LogLevel
+	formatFunc     func(level LogLevel, fileName string, line int, msg string) string
 }
 
 func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
@@ -211,6 +212,7 @@ func (r *Log) start() {
 					if err == nil {
 						c.file = file
 					}
+
 					c.size = 0
 					if c.OnTimeout != nil {
 						nc := c.OnTimeout(newpath)
@@ -294,51 +296,68 @@ func (r *Log) IsStop() bool {
 	return r.stop == 1
 }
 
-func (r *Log) write(levstr string, v ...interface{}) {
+func (r *Log) SetFormatFunc(formatFunc func(level LogLevel, fileName string, line int, msg string) string) {
+	r.formatFunc = formatFunc
+}
+
+func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 	defer func() { recover() }()
 	if r.IsStop() {
 		return
 	}
-	prefix := levstr
-	_, file, line, ok := runtime.Caller(3)
-	if ok {
-		i := strings.LastIndex(file, "/") + 1
-		prefix = fmt.Sprintf("[%s][%s][%s:%d]:", levstr, Date(), (string)(([]byte(file))[i:]), line)
-	}
-	if len(v) > 1 {
-		r.cwrite <- prefix + fmt.Sprintf(v[0].(string), v[1:]...)
+
+	if r.formatFunc != nil {
+		_, file, line, ok := runtime.Caller(3)
+		if ok {
+			i := strings.LastIndex(file, "/") + 1
+			if len(v) > 1 {
+				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, fmt.Sprintf(v[0].(string), v[1:]...))
+			} else {
+				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, fmt.Sprint(v[0]))
+			}
+		}
 	} else {
-		r.cwrite <- prefix + fmt.Sprint(v[0])
+		prefix := levstr
+		_, file, line, ok := runtime.Caller(3)
+		if ok {
+			i := strings.LastIndex(file, "/") + 1
+			prefix = fmt.Sprintf("[%s][%s][%s:%d]:", levstr, Date(), string(([]byte(file))[i:]), line)
+		}
+		if len(v) > 1 {
+			r.cwrite <- prefix + fmt.Sprintf(v[0].(string), v[1:]...)
+		} else {
+			r.cwrite <- prefix + fmt.Sprint(v[0])
+		}
 	}
 }
 
 func (r *Log) Debug(v ...interface{}) {
 	if r.level <= LogLevelDebug {
-		r.write("D", v...)
+		r.write("D", LogLevelDebug, v...)
 	}
 }
 
 func (r *Log) Info(v ...interface{}) {
 	if r.level <= LogLevelInfo {
-		r.write("I", v...)
+		r.write("I", LogLevelInfo, v...)
 	}
 }
 
 func (r *Log) Warn(v ...interface{}) {
 	if r.level <= LogLevelWarn {
-		r.write("W", v...)
+		r.write("W", LogLevelWarn, v...)
 	}
 }
 
 func (r *Log) Error(v ...interface{}) {
 	if r.level <= LogLevelError {
-		r.write("E", v...)
+		r.write("E", LogLevelError, v...)
 	}
 }
 
 func (r *Log) Fatal(v ...interface{}) {
 	if r.level <= LogLevelFatal {
-		r.write("FATAL", v...)
+		r.write("F", LogLevelFatal, v...)
 	}
 }
 
