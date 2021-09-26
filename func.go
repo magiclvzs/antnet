@@ -47,7 +47,7 @@ func AtExit(fun func()) {
 	atexitMapSync.Unlock()
 }
 
-func Stop() {
+func stopServer() {
 	if !atomic.CompareAndSwapInt32(&stop, 0, 1) {
 		return
 	}
@@ -66,7 +66,15 @@ func Stop() {
 		}
 	}
 
-	LogInfo("Server Stop")
+	Try(func() {
+		close(stopChanForSys)
+		LogInfo("Server Stop From Ctrl+C")
+	}, func(i interface{}) {
+		LogInfo("Server Stop From Call Stop")
+	})
+}
+
+func Stop() {
 	close(stopChanForSys)
 }
 
@@ -111,7 +119,7 @@ func WaitForSystemExit(atexit ...func()) {
 	signal.Notify(stopChanForSys, os.Interrupt, os.Kill, syscall.SIGTERM)
 	select {
 	case <-stopChanForSys:
-		Stop()
+		stopServer()
 	}
 	for _, v := range atexit {
 		if v != nil {
