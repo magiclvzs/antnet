@@ -132,6 +132,10 @@ type RedisManager struct {
 	lock     sync.RWMutex
 }
 
+func (r *RedisManager) GetLen() int {
+	return len(r.dbs)
+}
+
 func (r *RedisManager) GetByRid(rid int) *Redis {
 	r.lock.RLock()
 	db := r.dbs[rid]
