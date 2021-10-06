@@ -155,6 +155,33 @@ func (r *Parser) Register(cmd, act uint8, c2s interface{}, s2c interface{}) {
 	r.RegisterFunc(cmd, act, c2sFunc, s2cFunc)
 }
 
+func (r *Parser) RegisterFuncById(id int, c2sFunc ParseFunc, s2cFunc ParseFunc) {
+	if r.msgMap == nil {
+		r.msgMap = map[int]MsgParser{}
+	}
+
+	r.msgMap[id] = MsgParser{c2sFunc: c2sFunc, s2cFunc: s2cFunc}
+}
+
+func (r *Parser) RegisterById(id int, c2s interface{}, s2c interface{}) {
+	var c2sFunc ParseFunc = nil
+	var s2cFunc ParseFunc = nil
+
+	if c2s != nil {
+		c2sType := reflect.TypeOf(c2s).Elem()
+		c2sFunc = func() interface{} {
+			return reflect.New(c2sType).Interface()
+		}
+	}
+	if s2c != nil {
+		s2cType := reflect.TypeOf(s2c).Elem()
+		s2cFunc = func() interface{} {
+			return reflect.New(s2cType).Interface()
+		}
+	}
+	r.RegisterFuncById(id, c2sFunc, s2cFunc)
+}
+
 func (r *Parser) RegisterMsgFunc(c2sFunc ParseFunc, s2cFunc ParseFunc) {
 	if r.Type == ParserTypeCmd {
 		if r.cmdRoot == nil {
