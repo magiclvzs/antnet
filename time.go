@@ -50,10 +50,10 @@ func Sleep(ms int) {
 
 func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
 	if inteval < 0 {
-		LogError("new timerout inteval:%v ms", inteval)
+		LogError("new timeout inteval:%v ms", inteval)
 		return
 	}
-	LogInfo("new timerout inteval:%v ms", inteval)
+	LogInfo("new timeout inteval:%v ms", inteval)
 
 	Go2(func(cstop chan struct{}) {
 		var tick *time.Timer
