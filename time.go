@@ -16,6 +16,10 @@ func UnixTime(sec, nsec int64) time.Time {
 	return time.Unix(sec, nsec)
 }
 
+func UnixUs() int64 {
+	return time.Now().UnixNano() / 1000
+}
+
 func UnixMs() int64 {
 	return time.Now().UnixNano() / 1000000
 }
