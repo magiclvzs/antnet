@@ -67,7 +67,7 @@ type IMsgQue interface {
 
 	SetGroupId(group string)
 	DelGroupId(group string)
-	ClearGroupId(group string)
+	ClearGroupId()
 	IsInGroup(group string) bool
 	//服务器内部通讯时提升效率，比如战斗服发送消息到网关服，应该在连接建立时使用，cwriteCnt大于0表示重新设置cwrite缓存长度，内网一般发送较快，不用考虑
 	SetMultiplex(multiplex bool, cwriteCnt int) bool
@@ -191,7 +191,7 @@ func (r *msgQue) DelGroupId(group string) {
 	r.callbackLock.Unlock()
 }
 
-func (r *msgQue) ClearGroupId(group string) {
+func (r *msgQue) ClearGroupId() {
 	r.callbackLock.Lock()
 	r.group = nil
 	r.callbackLock.Unlock()
