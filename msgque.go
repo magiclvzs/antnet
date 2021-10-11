@@ -338,15 +338,18 @@ func (r *msgQue) baseStop() {
 	msgqueMapSync.Unlock()
 	LogInfo("msgque close id:%d", r.id)
 }
-func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) bool {
+func (r *msgQue) processMsg(msgque IMsgQue, msg *Message) (re bool) {
+	re = true
 	if r.multiplex {
 		Go(func() {
 			r.processMsgTrue(msgque, msg)
 		})
 	} else {
-		return r.processMsgTrue(msgque, msg)
+		Try(func() {
+			re = r.processMsgTrue(msgque, msg)
+		}, nil)
 	}
-	return true
+	return re
 }
 func (r *msgQue) processMsgTrue(msgque IMsgQue, msg *Message) bool {
 	if msg.Head != nil && msg.Head.Flags&FlagCompress > 0 && msg.Data != nil {
