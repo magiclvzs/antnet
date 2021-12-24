@@ -60,18 +60,19 @@ func SetTimeout(inteval int, fn func(...interface{}) int, args ...interface{}) {
 	LogInfo("new timeout inteval:%v ms", inteval)
 
 	Go2(func(cstop chan struct{}) {
-		var tick *time.Timer
+		tick := time.NewTimer(time.Millisecond * time.Duration(inteval))
 		for inteval > 0 {
-			tick = time.NewTimer(time.Millisecond * time.Duration(inteval))
 			select {
 			case <-cstop:
-				tick.Stop()
 				inteval = 0
 			case <-tick.C:
-				tick.Stop()
 				inteval = fn(args...)
+				if inteval > 0 {
+					tick.Reset(time.Millisecond * time.Duration(inteval))
+				}
 			}
 		}
+		tick.Stop()
 	})
 }
 
