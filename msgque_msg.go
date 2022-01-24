@@ -17,6 +17,7 @@ const (
 	FlagAck      = 1 << 4 //确认消息
 	FlagReSend   = 1 << 5 //重发消息
 	FlagClient   = 1 << 6 //消息来自客服端，用于判断index来之服务器还是其他玩家
+	FlagUdpProxy = 1 << 7 //udp代理
 )
 
 var MaxMsgDataSize uint32 = 1024 * 1024
