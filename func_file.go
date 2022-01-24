@@ -126,7 +126,7 @@ func CopyFile(dst io.Writer, src io.Reader) (written int64, err error) {
 	return io.Copy(dst, src)
 }
 
-func walkDirTrue(dir string, wg *sync.WaitGroup, fun func(dir string, info os.FileInfo)) {
+func walkDirTrue(dir string, level int, maxLevel int, wg *sync.WaitGroup, fun func(path string, info os.FileInfo)) {
 	wg.Add(1)
 	defer wg.Done()
 	infos, err := ioutil.ReadDir(dir)
@@ -136,27 +136,31 @@ func walkDirTrue(dir string, wg *sync.WaitGroup, fun func(dir string, info os.Fi
 	}
 	for _, info := range infos {
 		if info.IsDir() {
-			fun(dir, info)
 			subDir := filepath.Join(dir, info.Name())
-			go walkDirTrue(subDir, wg, fun)
+			fun(subDir, info)
+			if maxLevel > 0 && level+1 > maxLevel {
+				continue
+			}
+			go walkDirTrue(subDir, level+1, maxLevel, wg, fun)
 		} else {
-			fun(dir, info)
+			file := filepath.Join(dir, info.Name())
+			fun(file, info)
 		}
 	}
 }
 
-func WalkDir(dir string, fun func(dir string, info os.FileInfo)) {
+func WalkDir(dir string, maxLevel int, fun func(dir string, info os.FileInfo)) {
 	if fun == nil {
 		return
 	}
 	wg := &sync.WaitGroup{}
-	walkDirTrue(dir, wg, fun)
+	walkDirTrue(dir, 0, maxLevel, wg, fun)
 	wg.Wait()
 }
 
 func FileCount(dir string) int32 {
 	var count int32 = 0
-	WalkDir(dir, func(dir string, info os.FileInfo) {
+	WalkDir(dir, -1, func(dir string, info os.FileInfo) {
 		if !info.IsDir() {
 			atomic.AddInt32(&count, 1)
 		}
@@ -166,7 +170,7 @@ func FileCount(dir string) int32 {
 
 func DirCount(dir string) int32 {
 	var count int32 = 0
-	WalkDir(dir, func(dir string, info os.FileInfo) {
+	WalkDir(dir, -1, func(dir string, info os.FileInfo) {
 		if info.IsDir() {
 			atomic.AddInt32(&count, 1)
 		}
@@ -176,7 +180,7 @@ func DirCount(dir string) int32 {
 
 func DirSize(dir string) int64 {
 	var size int64 = 0
-	WalkDir(dir, func(dir string, info os.FileInfo) {
+	WalkDir(dir, -1, func(dir string, info os.FileInfo) {
 		if !info.IsDir() {
 			atomic.AddInt64(&size, info.Size())
 		}
