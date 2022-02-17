@@ -174,6 +174,14 @@ func GetSelfIp(ifnames ...string) []string {
 	return allIp
 }
 
+func IsIpAddress(ip string) bool {
+	address := net.ParseIP(ip)
+	if address != nil {
+		return true
+	}
+	return false
+}
+
 func IsIntraIp(ip string) bool {
 	if ip == "127.0.0.1" {
 		return true
