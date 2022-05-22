@@ -48,6 +48,7 @@ var (
 	ErrNetTimeout     = NewError("网络超时", 200)
 	ErrNetUnreachable = NewError("网络不可达", 201)
 
+	ErrClientReserve = NewError("客户端保留，服务器任何情况不会下发这个错误", 254)
 	ErrErrIdNotFound = NewError("错误没有对应的错误码", 255)
 )
 
