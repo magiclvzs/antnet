@@ -67,7 +67,7 @@ func (r *FileLogger) Write(str string) {
 			newpath = r.OnRenameFile(r.dirname+"/", r.filename, r.extname)
 		}
 		os.Rename(r.Path, newpath)
-		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		file, err := os.OpenFile(r.Path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 		if err == nil {
 			r.file = file
 		}
