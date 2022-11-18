@@ -166,7 +166,9 @@ func (r *RedisManager) Sub(fun func(channel, data string), channels ...string) {
 					Go(func() { fun(msg.Channel, msg.Payload) })
 				} else if _, ok := err.(net.Error); !ok {
 					if err.Error() != "redis: reply is empty" {
-						LogFatal("[redis]pubsub broken err:%v", err)
+						if !IsStop() {
+							LogFatal("[redis]pubsub broken err:%v", err)
+						}
 						break
 					}
 				}
