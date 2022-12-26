@@ -250,7 +250,6 @@ func Try(fun func(), handler func(interface{})) {
 				LogStack()
 				LogError("error catch:%v", err)
 			} else {
-				LogStack()
 				handler(err)
 			}
 			atomic.AddInt32(&statis.PanicCount, 1)
