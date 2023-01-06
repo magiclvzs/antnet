@@ -309,7 +309,7 @@ func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 	}
 
 	if r.formatFunc != nil {
-		_, file, line, ok := runtime.Caller(3)
+		_, file, line, ok := runtime.Caller(2)
 		if ok {
 			i := strings.LastIndex(file, "/") + 1
 			if len(v) > 1 {
