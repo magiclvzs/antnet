@@ -128,7 +128,8 @@ func (r *HttpLogger) Write(str string) {
 type LogLevel int
 
 const (
-	LogLevelDebug  LogLevel = iota //调试信息
+	LogLevelTrace  LogLevel = iota //跟踪信息
+	LogLevelDebug                  //调试信息
 	LogLevelInfo                   //资讯讯息
 	LogLevelWarn                   //警告状况发生
 	LogLevelError                  //一般错误，可能导致功能不正常
@@ -137,6 +138,7 @@ const (
 )
 
 var LogLevelNameMap = map[string]LogLevel{
+	"trace": LogLevelTrace,
 	"debug": LogLevelDebug,
 	"info":  LogLevelInfo,
 	"warn":  LogLevelWarn,
@@ -331,6 +333,12 @@ func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 	}
 }
 
+func (r *Log) Trace(v ...interface{}) {
+	if r.level <= LogLevelTrace {
+		r.write("T", LogLevelTrace, v...)
+	}
+}
+
 func (r *Log) Debug(v ...interface{}) {
 	if r.level <= LogLevelDebug {
 		r.write("D", LogLevelDebug, v...)
@@ -387,6 +395,10 @@ func NewLog(bufsize int, logger ...ILogger) *Log {
 	}
 	log.start()
 	return log
+}
+
+func LogTrace(v ...interface{}) {
+	DefLog.Trace(v...)
 }
 
 func LogInfo(v ...interface{}) {
