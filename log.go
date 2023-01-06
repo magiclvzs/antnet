@@ -156,7 +156,7 @@ type Log struct {
 	preLoggerCount int32
 	loggerCount    int32
 	level          LogLevel
-	formatFunc     func(level LogLevel, fileName string, line int, msg string) string
+	formatFunc     func(level LogLevel, fileName string, line int, v ...interface{}) string
 }
 
 func (r *Log) initFileLogger(f *FileLogger) *FileLogger {
@@ -298,7 +298,7 @@ func (r *Log) IsStop() bool {
 	return r.stop == 1
 }
 
-func (r *Log) SetFormatFunc(formatFunc func(level LogLevel, fileName string, line int, msg string) string) {
+func (r *Log) SetFormatFunc(formatFunc func(level LogLevel, fileName string, line int, v ...interface{}) string) {
 	r.formatFunc = formatFunc
 }
 
@@ -313,9 +313,9 @@ func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 		if ok {
 			i := strings.LastIndex(file, "/") + 1
 			if len(v) > 1 {
-				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, fmt.Sprintf(v[0].(string), v[1:]...))
+				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, v...)
 			} else {
-				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, fmt.Sprint(v[0]))
+				r.cwrite <- r.formatFunc(level, string(([]byte(file))[i:]), line, v...)
 			}
 		}
 	} else {
