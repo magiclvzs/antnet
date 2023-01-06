@@ -156,6 +156,7 @@ type Log struct {
 	preLoggerCount int32
 	loggerCount    int32
 	level          LogLevel
+	callStackCnt   int
 	formatFunc     func(level LogLevel, fileName string, line int, v ...interface{}) string
 }
 
@@ -276,7 +277,9 @@ func (r *Log) Level() LogLevel {
 func (r *Log) SetLevel(level LogLevel) {
 	r.level = level
 }
-
+func (r *Log) SetCallStackCnt(callStackCnt int) {
+	r.callStackCnt = callStackCnt
+}
 func (r *Log) SetLevelByName(name string) bool {
 	level, ok := LogLevelNameMap[name]
 	if ok {
@@ -309,7 +312,7 @@ func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 	}
 
 	if r.formatFunc != nil {
-		_, file, line, ok := runtime.Caller(2)
+		_, file, line, ok := runtime.Caller(r.callStackCnt)
 		if ok {
 			i := strings.LastIndex(file, "/") + 1
 			if len(v) > 1 {
@@ -320,7 +323,7 @@ func (r *Log) write(levstr string, level LogLevel, v ...interface{}) {
 		}
 	} else {
 		prefix := levstr
-		_, file, line, ok := runtime.Caller(3)
+		_, file, line, ok := runtime.Caller(r.callStackCnt)
 		if ok {
 			i := strings.LastIndex(file, "/") + 1
 			prefix = fmt.Sprintf("[%s][%s][%s:%d]:", levstr, Date(), string(([]byte(file))[i:]), line)
@@ -385,6 +388,7 @@ func (r *Log) Write(v ...interface{}) {
 func NewLog(bufsize int, logger ...ILogger) *Log {
 	log := &Log{
 		bufsize:        bufsize,
+		callStackCnt:   3,
 		cwrite:         make(chan string, bufsize),
 		ctimeout:       make(chan *FileLogger, 32),
 		level:          LogLevelDebug,
