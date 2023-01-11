@@ -166,7 +166,7 @@ func (r *msgQue) Reconnect(t int) {
 
 }
 
-func (r *msgQue) IsProxy() bool{
+func (r *msgQue) IsProxy() bool {
 	return r.realRemoteAddr != ""
 }
 

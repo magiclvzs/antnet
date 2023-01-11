@@ -22,7 +22,7 @@ func Go(fn func()) {
 	c := atomic.AddInt32(&gocount, 1)
 	if DefLog.Level() <= LogLevelDebug {
 		debugStr = LogSimpleStack()
-		LogDebug("goroutine start id:%d count:%d from:%s", id, c, debugStr)
+		LogTrace("goroutine start id:%d count:%d from:%s", id, c, debugStr)
 	}
 	go func() {
 		Try(fn, nil)
@@ -39,7 +39,7 @@ func Go(fn func()) {
 		c = atomic.AddInt32(&gocount, -1)
 
 		if DefLog.Level() <= LogLevelDebug {
-			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
+			LogTrace("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
 	}()
 }
@@ -63,7 +63,7 @@ func goForRedis(fn func()) {
 	c := atomic.AddInt32(&gocount, 1)
 	if DefLog.Level() <= LogLevelDebug {
 		debugStr = LogSimpleStack()
-		LogDebug("goroutine start id:%d count:%d from:%s", id, c, debugStr)
+		LogTrace("goroutine start id:%d count:%d from:%s", id, c, debugStr)
 	}
 	go func() {
 		Try(fn, nil)
@@ -71,7 +71,7 @@ func goForRedis(fn func()) {
 		c = atomic.AddInt32(&gocount, -1)
 
 		if DefLog.Level() <= LogLevelDebug {
-			LogDebug("goroutine end id:%d count:%d from:%s", id, c, debugStr)
+			LogTrace("goroutine end id:%d count:%d from:%s", id, c, debugStr)
 		}
 	}()
 }
