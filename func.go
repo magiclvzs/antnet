@@ -380,7 +380,7 @@ func ParseInt64(s string) int64 {
 	return int64(value)
 }
 
-//固定形式  x&y&z
+// 固定形式  x&y&z
 func Split1(s string, retSlice *[]uint32) {
 	slice := strings.Split(s, "&")
 	*retSlice = make([]uint32, 0, len(slice))
@@ -389,7 +389,7 @@ func Split1(s string, retSlice *[]uint32) {
 	}
 }
 
-//固定形式   x&y&z;a&b&c;l_m_n
+// 固定形式   x&y&z;a&b&c;l_m_n
 func Split2(s string, retSlice *[][]uint32) {
 	slice1 := strings.Split(s, ";")
 	*retSlice = make([][]uint32, 0, len(slice1))
@@ -400,7 +400,7 @@ func Split2(s string, retSlice *[][]uint32) {
 	}
 }
 
-//固定形式 x&y&z;a&b&c:x&y&z;a&b&c
+// 固定形式 x&y&z;a&b&c:x&y&z;a&b&c
 func Split3(s string, retSlice *[][][]uint32) {
 	slice1 := strings.Split(s, ":")
 	*retSlice = make([][][]uint32, 0, len(slice1))
@@ -411,12 +411,12 @@ func Split3(s string, retSlice *[][][]uint32) {
 	}
 }
 
-//固定形式  x&y&z
+// 固定形式  x&y&z
 func SplitString1(s string, retSlice *[]string) {
 	*retSlice = strings.Split(s, "&")
 }
 
-//固定形式  x&y&z;a&b&c;l_m_n
+// 固定形式  x&y&z;a&b&c;l_m_n
 func SplitString2(s string, retSlice *[][]string) {
 	slice1 := strings.Split(s, ";")
 	*retSlice = make([][]string, 0, len(slice1))
@@ -425,7 +425,7 @@ func SplitString2(s string, retSlice *[][]string) {
 	}
 }
 
-//固定形式  x&y&z;a&b&c:x&y&z;a&b&c:
+// 固定形式  x&y&z;a&b&c:x&y&z;a&b&c:
 func SplitString3(s string, retSlice *[][][]string) {
 	slice1 := strings.Split(s, ":")
 	*retSlice = make([][][]string, 0, len(slice1))
@@ -436,14 +436,13 @@ func SplitString3(s string, retSlice *[][][]string) {
 	}
 }
 
-//随机数返回[min,max)
+// 随机数返回[min,max)
 func RandBetween(min, max int) int {
 	if min >= max || max == 0 {
 		return max
 	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	random := r.Intn(max-min) + min
+	random := random.Intn(max-min) + min
 	return random
 }
 
@@ -457,9 +456,9 @@ func RandString(count int) string {
 	return randomstr
 }
 
-//随机数返回[min,max)中的count个不重复数值
-//一般用来从数组中随机一部分数据的下标
-//2个随机数种子保证参数相同，返回值不一定相同，达到伪随机目的
+// 随机数返回[min,max)中的count个不重复数值
+// 一般用来从数组中随机一部分数据的下标
+// 2个随机数种子保证参数相同，返回值不一定相同，达到伪随机目的
 func RandSliceBetween(min, max, count int) []int {
 	if min > max {
 		min, max = max, min
@@ -475,8 +474,7 @@ func RandSliceBetween(min, max, count int) []int {
 		}
 		return retSlice
 	}
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	random := r.Intn(randomRange) + min
+	random := random.Intn(randomRange) + min
 	baseRand := RandBetween(random*min, random*max)
 	retSlice = append(retSlice, random)
 	for i := 1; i < count; i++ {
@@ -571,7 +569,7 @@ func SafeSubInt64(a, b int64) int64 {
 	return 0
 }
 
-//三元运算符
+// 三元运算符
 func Ternary(val1 bool, ret1, ret2 interface{}) interface{} {
 	if val1 {
 		return ret1
