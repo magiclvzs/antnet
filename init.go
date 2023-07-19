@@ -1,7 +1,6 @@
 package antnet
 
 import (
-	"math/rand"
 	"os"
 	"runtime"
 	"sync"
@@ -82,7 +81,6 @@ var StartTick int64
 var NowTick int64
 var Timestamp int64   // 当前秒数
 var TimeString string // 当前时间 格式：2020-7-9 14:59:15
-var random *rand.Rand
 
 var Config = struct {
 	AutoCompressLen uint32
@@ -102,7 +100,6 @@ var stopCheckMap = struct {
 }{M: map[uint64]string{}}
 
 func init() {
-	random = rand.New(rand.NewSource(time.Now().UnixNano()))
 	gmsgArray[gmsgId] = &gMsg{c: make(chan struct{})}
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	DefLog = NewLog(10000, &ConsoleLogger{true})
