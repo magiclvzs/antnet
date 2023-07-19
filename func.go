@@ -475,7 +475,7 @@ func RandSliceBetween(min, max, count int) []int {
 		}
 		return retSlice
 	}
-	r := rand.New(rand.NewSource(time.Now().Unix()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	random := r.Intn(randomRange) + min
 	baseRand := RandBetween(random*min, random*max)
 	retSlice = append(retSlice, random)
