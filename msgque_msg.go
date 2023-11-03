@@ -10,14 +10,14 @@ const (
 )
 
 const (
-	FlagEncrypt  = 1 << 0 //数据是经过加密的
-	FlagCompress = 1 << 1 //数据是经过压缩的
-	FlagContinue = 1 << 2 //消息还有后续
-	FlagNeedAck  = 1 << 3 //消息需要确认
-	FlagAck      = 1 << 4 //确认消息
-	FlagReSend   = 1 << 5 //重发消息
-	FlagClient   = 1 << 6 //消息来自客服端，用于判断index来之服务器还是其他玩家
-	FlagUdpProxy = 1 << 7 //udp代理
+	FlagEncrypt    = 1 << 0 //数据是经过加密的
+	FlagCompress   = 1 << 1 //数据是经过压缩的
+	FlagCanDiscard = 1 << 2 //消息是否可以丢弃，基于tcp网络的帧同步中，包可以主动丢弃
+	FlagNeedAck    = 1 << 3 //消息需要确认
+	FlagAck        = 1 << 4 //确认消息
+	FlagReSend     = 1 << 5 //重发消息
+	FlagClient     = 1 << 6 //消息来自客服端，用于判断index来之服务器还是其他玩家
+	FlagUdpProxy   = 1 << 7 //udp代理
 )
 
 var MaxMsgDataSize uint32 = 1024 * 1024

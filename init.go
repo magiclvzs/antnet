@@ -81,7 +81,7 @@ var StartTick int64
 var NowTick int64
 var Timestamp int64   // 当前秒数
 var TimeString string // 当前时间 格式：2020-7-9 14:59:15
-
+var randIndex uint32 = 0
 var Config = struct {
 	AutoCompressLen uint32
 	UdpServerGoCnt  int

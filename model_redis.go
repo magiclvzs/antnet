@@ -75,16 +75,14 @@ func PbStr(v proto.Message) string {
 
 func ParseDBData(data []byte, v proto.Message) bool {
 	if err := msgpack.Unmarshal(data, v); err != nil {
-		LogError(err)
-		return false
+		return ParsePbData(data, v)
 	}
 	return true
 }
 
 func ParseDBStr(str string, v proto.Message) bool {
 	if err := msgpack.Unmarshal([]byte(str), v); err != nil {
-		LogError(err)
-		return false
+		return ParsePbStr(str, v)
 	}
 	return true
 }

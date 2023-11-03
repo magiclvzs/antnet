@@ -233,7 +233,14 @@ func (r *msgQue) Send(m *Message) (re bool) {
 	select {
 	case r.cwrite <- m:
 	default:
-		LogWarn("msgque write channel full msgque:%v", r.id)
+		canDiscard := false
+		if m.Head != nil && m.Head.Flags&FlagCanDiscard > 0 {
+			canDiscard = true
+		}
+		LogWarn("msgque write channel full msgque:%v canDiscard:%v", r.id, canDiscard)
+		if canDiscard {
+			return false
+		}
 		r.cwrite <- m
 	}
 
