@@ -59,6 +59,7 @@ type IMsgQue interface {
 	SetCmdReadRaw()
 	GetTimeout() int
 	Reconnect(t int) //重连间隔  最小1s，此函数仅能连接关闭是调用
+	SetDiscardMsg(discard bool)
 
 	GetHandler() IMsgHandler
 
@@ -97,6 +98,7 @@ type msgQue struct {
 	user           interface{}
 	callbackLock   sync.Mutex
 	gmsgId         uint16
+	discard        bool
 	realRemoteAddr string //当使用代理是，需要特殊设置客户端真实IP
 }
 
@@ -215,8 +217,14 @@ func (r *msgQue) SetMultiplex(multiplex bool, cwriteCnt int) bool {
 	}
 	return t
 }
-
+func (r *msgQue) SetDiscardMsg(discard bool) {
+	r.discard = discard
+}
 func (r *msgQue) Send(m *Message) (re bool) {
+	if r.discard {
+		LogWarn("msgque discard msg by setting msgque:%v", r.id)
+		return true
+	}
 	if m == nil || r.stop == 1 {
 		return
 	}
